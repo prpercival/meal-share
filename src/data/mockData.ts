@@ -1,4 +1,4 @@
-import { User, Recipe, MealExchange, CookingSession } from '../types';
+import { User, Recipe, MealExchange, CookingSession, PlannedMeal, ShoppingListItem } from '../types';
 
 export const mockUsers: User[] = [
   {
@@ -266,3 +266,141 @@ export const mockCookingSessions: CookingSession[] = [
 
 // Export current user for easy switching between users
 export const currentUser = mockUsers[0]; // Bradley Van Egeren
+
+// Planned meals by user ID
+export const mockPlannedMealsByUser: Record<string, PlannedMeal[]> = {
+  // Preston Percival's planned meals
+  '1': [
+    {
+      id: '1',
+      recipeId: '1', // Mediterranean Quinoa Bowl
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'breakfast',
+      source: 'self-cook',
+    },
+    {
+      id: '2', 
+      recipeId: '2', // Spicy Korean Kimchi Fried Rice
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'lunch',
+      source: 'exchange',
+    },
+    {
+      id: '3',
+      recipeId: '3', // Classic Italian Carbonara
+      scheduledDate: '2025-07-14', // Tomorrow (Monday)
+      mealType: 'dinner',
+      source: 'group-cook',
+    },
+    {
+      id: '4',
+      recipeId: '1', // Mediterranean Quinoa Bowl
+      scheduledDate: '2025-07-14', // Tomorrow (Monday)
+      mealType: 'lunch',
+      source: 'exchange',
+    },
+  ],
+  
+  // Bradley Van Egeren's planned meals
+  '2': [
+    {
+      id: '5',
+      recipeId: '2', // Spicy Korean Kimchi Fried Rice
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'breakfast',
+      source: 'self-cook',
+    },
+    {
+      id: '6',
+      recipeId: '3', // Classic Italian Carbonara
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'dinner',
+      source: 'self-cook',
+    },
+  ],
+  
+  // Andrew Fitton's planned meals
+  '3': [
+    {
+      id: '7',
+      recipeId: '1', // Mediterranean Quinoa Bowl
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'lunch',
+      source: 'self-cook',
+    },
+  ],
+  
+  // Jan Roessler's planned meals
+  '4': [
+    {
+      id: '8',
+      recipeId: '3', // Classic Italian Carbonara
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'dinner',
+      source: 'group-cook',
+    },
+  ],
+  
+  // Sidhartha Chakravarty's planned meals
+  '5': [
+    {
+      id: '9',
+      recipeId: '2', // Spicy Korean Kimchi Fried Rice
+      scheduledDate: '2025-07-13', // Today (Sunday)
+      mealType: 'lunch',
+      source: 'exchange',
+    },
+  ],
+};
+
+// Helper function to get planned meals for current user
+export const getCurrentUserPlannedMeals = (): PlannedMeal[] => {
+  return mockPlannedMealsByUser[currentUser.id] || [];
+};
+
+// Shopping list items by user ID
+export const mockShoppingListByUser: Record<string, ShoppingListItem[]> = {
+  // Preston Percival's shopping list
+  '1': [
+    { id: '1', ingredient: 'Quinoa', amount: 2, unit: 'cups', recipeId: '1', purchased: false },
+    { id: '2', ingredient: 'Cherry tomatoes', amount: 1, unit: 'lb', recipeId: '1', purchased: true },
+    { id: '3', ingredient: 'Cucumber', amount: 1, unit: 'large', recipeId: '1', purchased: false },
+    { id: '4', ingredient: 'Red onion', amount: 0.5, unit: 'medium', recipeId: '1', purchased: false },
+    { id: '5', ingredient: 'Feta cheese', amount: 0.5, unit: 'cup', recipeId: '1', purchased: false },
+    { id: '6', ingredient: 'Cooked rice', amount: 3, unit: 'cups', recipeId: '2', purchased: false },
+    { id: '7', ingredient: 'Kimchi', amount: 1, unit: 'cup', recipeId: '2', purchased: true },
+    { id: '8', ingredient: 'Eggs', amount: 2, unit: 'large', recipeId: '2', purchased: false },
+  ],
+  
+  // Bradley Van Egeren's shopping list
+  '2': [
+    { id: '9', ingredient: 'Brown rice', amount: 3, unit: 'cups', recipeId: '2', purchased: false },
+    { id: '10', ingredient: 'Spaghetti', amount: 400, unit: 'g', recipeId: '3', purchased: true },
+    { id: '11', ingredient: 'Pancetta', amount: 150, unit: 'g', recipeId: '3', purchased: false },
+    { id: '12', ingredient: 'Pecorino Romano', amount: 100, unit: 'g', recipeId: '3', purchased: false },
+  ],
+  
+  // Andrew Fitton's shopping list
+  '3': [
+    { id: '13', ingredient: 'Quinoa', amount: 1, unit: 'cup', recipeId: '1', purchased: false },
+    { id: '14', ingredient: 'Olive oil', amount: 1, unit: 'bottle', recipeId: '1', purchased: true },
+  ],
+  
+  // Jan Roessler's shopping list
+  '4': [
+    { id: '15', ingredient: 'Lentils', amount: 2, unit: 'cans', recipeId: '3', purchased: false },
+    { id: '16', ingredient: 'Black pepper', amount: 1, unit: 'tsp', recipeId: '3', purchased: false },
+  ],
+  
+  // Sidhartha Chakravarty's shopping list
+  '5': [
+    { id: '17', ingredient: 'Sesame oil', amount: 2, unit: 'tbsp', recipeId: '2', purchased: false },
+    { id: '18', ingredient: 'Soy sauce', amount: 2, unit: 'tbsp', recipeId: '2', purchased: true },
+    { id: '19', ingredient: 'Green onions', amount: 3, unit: 'stalks', recipeId: '2', purchased: false },
+  ],
+};
+
+// Helper function to get shopping list for current user
+export const getCurrentUserShoppingList = (): ShoppingListItem[] => {
+  return mockShoppingListByUser[currentUser.id] || [];
+};

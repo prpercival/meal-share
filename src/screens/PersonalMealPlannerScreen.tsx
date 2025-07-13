@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContext } from '../context/AppContext';
 import { PlannedMeal, ShoppingListItem, NutritionInfo } from '../types';
+import { mockRecipes, getCurrentUserPlannedMeals, getCurrentUserShoppingList } from '../data/mockData';
 
 interface WeekDay {
   date: string;
@@ -23,37 +24,83 @@ export const PersonalMealPlannerScreen: React.FC = () => {
   const { weeklyPlan, setWeeklyPlan } = useAppContext();
   const [selectedTab, setSelectedTab] = useState<'calendar' | 'nutrition' | 'shopping'>('calendar');
   const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
+  const [plannedMeals, setPlannedMeals] = useState<PlannedMeal[]>([]);
+  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
 
   useEffect(() => {
-    // Generate current week
+    // Generate current week starting from Sunday
     const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDay); // Go back to Sunday
+    
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
       return {
         date: date.toISOString().split('T')[0],
-        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
         meals: [], // Would be populated from weeklyPlan
       };
     });
     setWeekDays(days);
+
+    // Load planned meals for the current user
+    const userPlannedMeals = getCurrentUserPlannedMeals();
+    setPlannedMeals(userPlannedMeals);
+
+    // Load shopping list for the current user
+    const userShoppingList = getCurrentUserShoppingList();
+    setShoppingList(userShoppingList);
   }, []);
 
-  const mockNutrition: NutritionInfo = {
-    calories: 1850,
-    protein: 95,
-    carbs: 210,
+  // Nutrition goals (daily targets)
+  const nutritionGoals: NutritionInfo = {
+    calories: 2000,
+    protein: 150,
+    carbs: 250,
     fat: 65,
-    fiber: 28,
+    fiber: 25,
   };
 
-  const mockShoppingList: ShoppingListItem[] = [
-    { id: '1', ingredient: 'Quinoa', amount: 2, unit: 'cups', recipeId: '1', purchased: false },
-    { id: '2', ingredient: 'Cherry tomatoes', amount: 1, unit: 'lb', recipeId: '1', purchased: true },
-    { id: '3', ingredient: 'Brown rice', amount: 3, unit: 'cups', recipeId: '2', purchased: false },
-    { id: '4', ingredient: 'Lentils', amount: 2, unit: 'cans', recipeId: '3', purchased: false },
-  ];
+  // Calculate current nutrition from today's planned meals
+  const calculateCurrentNutrition = (): NutritionInfo => {
+    let totalNutrition = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+    };
+
+    const todaysDate = new Date().toISOString().split('T')[0];
+    const todaysPlannedMeals = plannedMeals.filter(meal => meal.scheduledDate === todaysDate);
+
+    todaysPlannedMeals.forEach(plannedMeal => {
+      const recipe = mockRecipes.find(r => r.id === plannedMeal.recipeId);
+      if (recipe) {
+        // Assuming 1 serving per planned meal (could be configurable)
+        totalNutrition.calories += recipe.nutritionInfo.calories;
+        totalNutrition.protein += recipe.nutritionInfo.protein;
+        totalNutrition.carbs += recipe.nutritionInfo.carbs;
+        totalNutrition.fat += recipe.nutritionInfo.fat;
+        totalNutrition.fiber += recipe.nutritionInfo.fiber;
+      }
+    });
+
+    return totalNutrition;
+  };
+
+  const currentNutrition = calculateCurrentNutrition();
+
+  // Function to toggle shopping list item purchased status
+  const toggleShoppingItem = (itemId: string) => {
+    setShoppingList(prevList =>
+      prevList.map(item =>
+        item.id === itemId ? { ...item, purchased: !item.purchased } : item
+      )
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -190,8 +237,55 @@ export const PersonalMealPlannerScreen: React.FC = () => {
       ...theme.typography.caption,
       color: theme.colors.textSecondary,
     },
+    nutritionProgress: {
+      width: '100%',
+      height: 6,
+      backgroundColor: theme.colors.border,
+      borderRadius: 3,
+      marginTop: theme.spacing.xs,
+      overflow: 'hidden',
+    },
+    nutritionProgressBar: {
+      height: '100%',
+      backgroundColor: theme.colors.primary,
+      borderRadius: 3,
+    },
+    nutritionProgressOverflow: {
+      backgroundColor: theme.colors.warning,
+    },
+    nutritionSubtext: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      marginTop: theme.spacing.xs,
+      textAlign: 'center',
+    },
     shoppingContainer: {
       paddingHorizontal: theme.spacing.md,
+    },
+    shoppingTabContainer: {
+      flex: 1,
+    },
+    shoppingScrollContent: {
+      paddingBottom: theme.spacing.lg,
+    },
+    fixedButtonContainer: {
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.md,
+      backgroundColor: theme.colors.background,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    shoppingProgressContainer: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    shoppingProgressBar: {
+      width: '100%',
+      height: 6,
+      backgroundColor: theme.colors.border,
+      borderRadius: 3,
+      marginTop: theme.spacing.xs,
+      overflow: 'hidden',
     },
     shoppingItem: {
       flexDirection: 'row',
@@ -230,7 +324,6 @@ export const PersonalMealPlannerScreen: React.FC = () => {
       padding: theme.spacing.md,
       borderRadius: 8,
       alignItems: 'center',
-      marginTop: theme.spacing.md,
     },
     generateButtonText: {
       ...theme.typography.body,
@@ -249,7 +342,11 @@ export const PersonalMealPlannerScreen: React.FC = () => {
             <View>
               <Text style={styles.dayName}>{day.dayName}</Text>
               <Text style={styles.dayDate}>
-                {new Date(day.date).toLocaleDateString()}
+                {(() => {
+                  const [year, month, dayNum] = day.date.split('-').map(Number);
+                  const date = new Date(year, month - 1, dayNum); // month is 0-indexed
+                  return date.toLocaleDateString();
+                })()}
               </Text>
             </View>
           </View>
@@ -257,17 +354,44 @@ export const PersonalMealPlannerScreen: React.FC = () => {
             <View key={mealTime} style={styles.mealSlot}>
               <Text style={styles.mealTime}>{mealTime}</Text>
               <View style={styles.mealContent}>
-                {/* Mock meal data - would come from weeklyPlan */}
-                {index === 1 && mealTime === 'Lunch' ? (
-                  <View>
-                    <Text style={styles.mealName}>Mediterranean Quinoa Bowl</Text>
-                    <Text style={styles.mealSource}>From Preston P. (Exchange)</Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity style={styles.addMealButton}>
-                    <Text style={styles.addMealText}>+ Add Meal</Text>
-                  </TouchableOpacity>
-                )}
+                {(() => {
+                  // Check if there's a planned meal for this day and meal time
+                  const plannedMeal = plannedMeals.find(meal => 
+                    meal.scheduledDate === day.date && 
+                    meal.mealType === mealTime.toLowerCase()
+                  );
+                  
+                  if (plannedMeal) {
+                    const recipe = mockRecipes.find(r => r.id === plannedMeal.recipeId);
+                    if (recipe) {
+                      return (
+                        <View>
+                          <Text style={styles.mealName}>{recipe.title}</Text>
+                          <Text style={styles.mealSource}>
+                            {plannedMeal.source === 'exchange' ? 'From Exchange' : 
+                             plannedMeal.source === 'group-cook' ? 'Group Cooking' : 'Self Cook'}
+                          </Text>
+                        </View>
+                      );
+                    }
+                  }
+                  
+                  // Mock meal for Tuesday lunch (keeping original example)
+                  if (index === 1 && mealTime === 'Lunch') {
+                    return (
+                      <View>
+                        <Text style={styles.mealName}>Mediterranean Quinoa Bowl</Text>
+                        <Text style={styles.mealSource}>From Preston P. (Exchange)</Text>
+                      </View>
+                    );
+                  }
+                  
+                  return (
+                    <TouchableOpacity style={styles.addMealButton}>
+                      <Text style={styles.addMealText}>+ Add Meal</Text>
+                    </TouchableOpacity>
+                  );
+                })()}
               </View>
             </View>
           ))}
@@ -276,54 +400,174 @@ export const PersonalMealPlannerScreen: React.FC = () => {
     </ScrollView>
   );
 
-  const renderNutritionTab = () => (
-    <ScrollView style={styles.nutritionContainer}>
-      <View style={styles.nutritionCard}>
-        <Text style={styles.nutritionTitle}>Daily Nutrition Goals</Text>
-        <View style={styles.nutritionGrid}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{mockNutrition.calories}</Text>
-            <Text style={styles.nutritionLabel}>Calories</Text>
+  const renderNutritionTab = () => {
+    const nutritionItems = [
+      { 
+        key: 'calories',
+        label: 'Calories',
+        current: currentNutrition.calories,
+        goal: nutritionGoals.calories,
+        unit: '',
+      },
+      {
+        key: 'protein',
+        label: 'Protein', 
+        current: currentNutrition.protein,
+        goal: nutritionGoals.protein,
+        unit: 'g',
+      },
+      {
+        key: 'carbs',
+        label: 'Carbs',
+        current: currentNutrition.carbs, 
+        goal: nutritionGoals.carbs,
+        unit: 'g',
+      },
+      {
+        key: 'fat',
+        label: 'Fat',
+        current: currentNutrition.fat,
+        goal: nutritionGoals.fat,
+        unit: 'g',
+      },
+    ];
+
+    return (
+      <ScrollView style={styles.nutritionContainer}>
+        <View style={styles.nutritionCard}>
+          <Text style={styles.nutritionTitle}>Today's Nutrition Progress</Text>
+          <View style={styles.nutritionGrid}>
+            {nutritionItems.map(item => {
+              const progress = Math.min(item.current / item.goal, 1);
+              const isOverGoal = item.current > item.goal;
+              const remaining = Math.max(item.goal - item.current, 0);
+              
+              return (
+                <View key={item.key} style={styles.nutritionItem}>
+                  <Text style={styles.nutritionValue}>
+                    {Math.round(item.current)}{item.unit}
+                  </Text>
+                  <Text style={styles.nutritionLabel}>{item.label}</Text>
+                  <View style={styles.nutritionProgress}>
+                    <View 
+                      style={[
+                        styles.nutritionProgressBar,
+                        isOverGoal && styles.nutritionProgressOverflow,
+                        { width: `${Math.min(progress * 100, 100)}%` }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.nutritionSubtext}>
+                    {isOverGoal 
+                      ? `${Math.round(item.current - item.goal)}${item.unit} over`
+                      : `${Math.round(remaining)}${item.unit} left`
+                    }
+                  </Text>
+                </View>
+              );
+            })}
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{mockNutrition.protein}g</Text>
-            <Text style={styles.nutritionLabel}>Protein</Text>
+          
+          {plannedMeals.filter(meal => meal.scheduledDate === new Date().toISOString().split('T')[0]).length > 0 && (
+            <View style={{ marginTop: theme.spacing.lg }}>
+              <Text style={[styles.nutritionLabel, { marginBottom: theme.spacing.sm }]}>
+                Today's Planned Meals:
+              </Text>
+              {plannedMeals.filter(meal => meal.scheduledDate === new Date().toISOString().split('T')[0]).map(meal => {
+                const recipe = mockRecipes.find(r => r.id === meal.recipeId);
+                return recipe ? (
+                  <View key={meal.id} style={{ 
+                    flexDirection: 'row', 
+                    justifyContent: 'space-between',
+                    marginBottom: theme.spacing.xs,
+                  }}>
+                    <Text style={styles.nutritionSubtext}>
+                      {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}: {recipe.title}
+                    </Text>
+                    <Text style={styles.nutritionSubtext}>
+                      {recipe.nutritionInfo.calories} cal
+                    </Text>
+                  </View>
+                ) : null;
+              })}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
+
+  const renderShoppingTab = () => {
+    const completedItems = shoppingList.filter(item => item.purchased).length;
+    const totalItems = shoppingList.length;
+    const completionPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+    return (
+      <View style={styles.shoppingTabContainer}>
+        <ScrollView 
+          style={styles.shoppingContainer}
+          contentContainerStyle={styles.shoppingScrollContent}
+        >
+          {/* Shopping Progress Card */}
+          <View style={styles.nutritionCard}>
+            <View style={styles.shoppingProgressContainer}>
+              <Text style={styles.nutritionValue}>
+                {completedItems}/{totalItems}
+              </Text>
+              <Text style={styles.nutritionLabel}>Items Completed</Text>
+              <View style={styles.shoppingProgressBar}>
+                <View 
+                  style={[
+                    styles.nutritionProgressBar,
+                    { width: `${completionPercentage}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.nutritionSubtext}>
+                {Math.round(completionPercentage)}% Complete
+              </Text>
+            </View>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{mockNutrition.carbs}g</Text>
-            <Text style={styles.nutritionLabel}>Carbs</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{mockNutrition.fat}g</Text>
-            <Text style={styles.nutritionLabel}>Fat</Text>
-          </View>
+
+          {/* Shopping List Items */}
+          {shoppingList.map(item => (
+            <TouchableOpacity 
+              key={item.id} 
+              style={styles.shoppingItem}
+              onPress={() => toggleShoppingItem(item.id)}
+            >
+              <View style={[styles.checkbox, item.purchased && styles.checkboxChecked]}>
+                {item.purchased && (
+                  <Ionicons name="checkmark" size={16} color="white" />
+                )}
+              </View>
+              <View style={styles.shoppingItemText}>
+                <Text style={[
+                  styles.shoppingItemName,
+                  item.purchased && { textDecorationLine: 'line-through', opacity: 0.6 }
+                ]}>
+                  {item.ingredient}
+                </Text>
+                <Text style={[
+                  styles.shoppingItemAmount,
+                  item.purchased && { opacity: 0.6 }
+                ]}>
+                  {item.amount} {item.unit}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        
+        {/* Fixed Generate Button */}
+        <View style={styles.fixedButtonContainer}>
+          <TouchableOpacity style={styles.generateButton}>
+            <Text style={styles.generateButtonText}>Generate Shopping List</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
-  );
-
-  const renderShoppingTab = () => (
-    <ScrollView style={styles.shoppingContainer}>
-      {mockShoppingList.map(item => (
-        <TouchableOpacity key={item.id} style={styles.shoppingItem}>
-          <View style={[styles.checkbox, item.purchased && styles.checkboxChecked]}>
-            {item.purchased && (
-              <Ionicons name="checkmark" size={16} color="white" />
-            )}
-          </View>
-          <View style={styles.shoppingItemText}>
-            <Text style={styles.shoppingItemName}>{item.ingredient}</Text>
-            <Text style={styles.shoppingItemAmount}>
-              {item.amount} {item.unit}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-      <TouchableOpacity style={styles.generateButton}>
-        <Text style={styles.generateButtonText}>Generate Shopping List</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (selectedTab) {

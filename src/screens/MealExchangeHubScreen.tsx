@@ -165,6 +165,13 @@ export const MealExchangeHubScreen: React.FC = () => {
       color: theme.colors.text,
       marginLeft: theme.spacing.sm,
     },
+    contentContainer: {
+      flex: 1,
+      paddingTop: theme.spacing.sm,
+    },
+    listContainer: {
+      paddingBottom: theme.spacing.lg,
+    },
   });
 
   const getStatusColor = (status: string) => {
@@ -267,7 +274,7 @@ export const MealExchangeHubScreen: React.FC = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Meal Exchange Hub</Text>
         <Text style={styles.subtitle}>
@@ -315,7 +322,7 @@ export const MealExchangeHubScreen: React.FC = () => {
         <Text style={styles.mapButtonText}>View Pickup Locations & Venues</Text>
       </TouchableOpacity>
 
-      <View style={styles.section}>
+      <View style={styles.contentContainer}>
         <Text style={styles.sectionTitle}>
           {selectedExchangeType === 'cook-trade' ? 'Active Exchanges' : 'Cooking Sessions'}
         </Text>
@@ -324,17 +331,19 @@ export const MealExchangeHubScreen: React.FC = () => {
             data={exchanges}
             renderItem={renderExchange}
             keyExtractor={item => item.id}
-            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
           />
         ) : (
           <FlatList
             data={cookingSessions}
             renderItem={renderCookingSession}
             keyExtractor={item => item.id}
-            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
           />
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 };

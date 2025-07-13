@@ -28,6 +28,7 @@ export const CommunityFeedScreen: React.FC = () => {
   const { recipes, setRecipes } = useAppContext();
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [activeFilters, setActiveFilters] = useState<DietaryTag[]>([]);
+  const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     // Load mock data
@@ -56,6 +57,83 @@ export const CommunityFeedScreen: React.FC = () => {
   const handleClaimPortion = (recipeId: string) => {
     // Handle claiming a portion
     console.log('Claiming portion for recipe:', recipeId);
+  };
+
+  const renderFilters = () => {
+    const unselectedFilters = dietaryFilters.filter(filter => !activeFilters.includes(filter));
+    const shouldShowMoreButton = !filtersExpanded && unselectedFilters.length > 0;
+
+    return (
+      <View style={styles.filtersContainer}>
+        <Text style={styles.filtersTitle}>Dietary Filters</Text>
+        <View style={filtersExpanded ? styles.filtersExpanded : styles.filtersCollapsed}>
+          {/* Always show selected filters first */}
+          {activeFilters.map(filter => (
+            <TouchableOpacity
+              key={filter}
+              style={[styles.filterChip, styles.filterChipActive]}
+              onPress={() => toggleFilter(filter)}
+            >
+              <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          
+          {/* If no active filters and not expanded, show first few unselected filters */}
+          {!filtersExpanded && activeFilters.length === 0 && unselectedFilters.slice(0, 3).map(filter => (
+            <TouchableOpacity
+              key={filter}
+              style={styles.filterChip}
+              onPress={() => toggleFilter(filter)}
+            >
+              <Text style={styles.filterChipText}>
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          
+          {/* Show unselected filters only when expanded */}
+          {filtersExpanded && unselectedFilters.map(filter => (
+            <TouchableOpacity
+              key={filter}
+              style={styles.filterChip}
+              onPress={() => toggleFilter(filter)}
+            >
+              <Text style={styles.filterChipText}>
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          
+          {/* Show more button logic */}
+          {shouldShowMoreButton && (
+            <TouchableOpacity
+              style={styles.showMoreButton}
+              onPress={() => setFiltersExpanded(true)}
+            >
+              <Text style={styles.showMoreButtonText}>
+                {activeFilters.length === 0 
+                  ? `+${unselectedFilters.length - 3} more`
+                  : `+${unselectedFilters.length} more`
+                }
+              </Text>
+            </TouchableOpacity>
+          )}
+          
+          {filtersExpanded && (
+            <TouchableOpacity
+              style={styles.showMoreButton}
+              onPress={() => setFiltersExpanded(false)}
+            >
+              <Text style={styles.showMoreButtonText}>
+                Show less
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
   };
 
   const styles = StyleSheet.create({
@@ -109,6 +187,30 @@ export const CommunityFeedScreen: React.FC = () => {
     filterChipTextActive: {
       color: 'white',
     },
+    filtersCollapsed: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    },
+    filtersExpanded: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    showMoreButton: {
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: 20,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      marginRight: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    showMoreButtonText: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+    },
     recipesContainer: {
       flex: 1,
     },
@@ -152,30 +254,7 @@ export const CommunityFeedScreen: React.FC = () => {
         </Text>
       </TouchableOpacity>
 
-      <View style={styles.filtersContainer}>
-        <Text style={styles.filtersTitle}>Dietary Filters</Text>
-        <View style={styles.filtersRow}>
-          {dietaryFilters.map(filter => (
-            <TouchableOpacity
-              key={filter}
-              style={[
-                styles.filterChip,
-                activeFilters.includes(filter) && styles.filterChipActive,
-              ]}
-              onPress={() => toggleFilter(filter)}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeFilters.includes(filter) && styles.filterChipTextActive,
-                ]}
-              >
-                {filter}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      {renderFilters()}
 
       <FlatList
         data={filteredRecipes}
