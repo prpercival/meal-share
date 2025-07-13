@@ -275,17 +275,41 @@ export const PersonalMealPlannerScreen: React.FC = () => {
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
     },
-    shoppingProgressContainer: {
-      alignItems: 'center',
-      width: '100%',
+    buttonProgressContainer: {
+      marginBottom: theme.spacing.sm,
     },
-    shoppingProgressBar: {
-      width: '100%',
-      height: 6,
+    buttonProgressInfo: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.xs,
+    },
+    buttonProgressText: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+    completionCheckmark: {
+      color: theme.colors.success,
+      fontWeight: 'bold',
+    },
+    buttonProgressBar: {
+      height: 4,
       backgroundColor: theme.colors.border,
-      borderRadius: 3,
-      marginTop: theme.spacing.xs,
+      borderRadius: 2,
       overflow: 'hidden',
+    },
+    buttonProgressFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
+    progressLow: {
+      backgroundColor: theme.colors.error, // Red for 0-49%
+    },
+    progressMedium: {
+      backgroundColor: theme.colors.warning, // Orange for 50-99%
+    },
+    progressComplete: {
+      backgroundColor: theme.colors.success, // Green for 100%
     },
     shoppingItem: {
       flexDirection: 'row',
@@ -508,27 +532,6 @@ export const PersonalMealPlannerScreen: React.FC = () => {
           style={styles.shoppingContainer}
           contentContainerStyle={styles.shoppingScrollContent}
         >
-          {/* Shopping Progress Card */}
-          <View style={styles.nutritionCard}>
-            <View style={styles.shoppingProgressContainer}>
-              <Text style={styles.nutritionValue}>
-                {completedItems}/{totalItems}
-              </Text>
-              <Text style={styles.nutritionLabel}>Items Completed</Text>
-              <View style={styles.shoppingProgressBar}>
-                <View 
-                  style={[
-                    styles.nutritionProgressBar,
-                    { width: `${completionPercentage}%` }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.nutritionSubtext}>
-                {Math.round(completionPercentage)}% Complete
-              </Text>
-            </View>
-          </View>
-
           {/* Shopping List Items */}
           {shoppingList.map(item => (
             <TouchableOpacity 
@@ -559,8 +562,32 @@ export const PersonalMealPlannerScreen: React.FC = () => {
           ))}
         </ScrollView>
         
-        {/* Fixed Generate Button */}
+        {/* Fixed Generate Button with Progress */}
         <View style={styles.fixedButtonContainer}>
+          {/* Progress Bar above Button */}
+          <View style={styles.buttonProgressContainer}>
+            <View style={styles.buttonProgressInfo}>
+              <Text style={styles.buttonProgressText}>
+                {completedItems}/{totalItems} completed ({Math.round(completionPercentage)}%)
+                {completionPercentage === 100 && (
+                  <Text style={styles.completionCheckmark}> ✓</Text>
+                )}
+              </Text>
+            </View>
+            <View style={styles.buttonProgressBar}>
+              <View 
+                style={[
+                  styles.buttonProgressFill,
+                  completionPercentage >= 100 ? styles.progressComplete : 
+                  completionPercentage >= 50 ? styles.progressMedium :
+                  styles.progressLow,
+                  { width: `${Math.min(completionPercentage, 100)}%` }
+                ]} 
+              />
+            </View>
+          </View>
+          
+          {/* Generate Button */}
           <TouchableOpacity style={styles.generateButton}>
             <Text style={styles.generateButtonText}>Generate Shopping List</Text>
           </TouchableOpacity>
