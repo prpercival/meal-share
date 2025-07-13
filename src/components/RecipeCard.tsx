@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { Recipe } from '../types';
@@ -98,7 +99,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       {recipe.image && (
-        <Image source={{ uri: recipe.image }} style={styles.image} />
+        <Image 
+          source={recipe.image} 
+          style={styles.image}
+          contentFit="cover"
+          transition={200}
+        />
       )}
       <View style={styles.content}>
         <Text style={styles.title}>{recipe.title}</Text>

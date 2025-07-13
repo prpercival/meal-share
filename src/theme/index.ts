@@ -2,7 +2,7 @@ import { Theme } from '../types';
 
 export const lightTheme: Theme = {
   colors: {
-    primary: '#4CAF50',
+    primary: '#34c3eb',
     secondary: '#FFC107',
     background: '#FFFFFF',
     surface: '#F5F5F5',
@@ -52,7 +52,7 @@ export const lightTheme: Theme = {
 export const darkTheme: Theme = {
   ...lightTheme,
   colors: {
-    primary: '#66BB6A',
+    primary: '#34c3eb',
     secondary: '#FFD54F',
     background: '#121212',
     surface: '#1E1E1E',

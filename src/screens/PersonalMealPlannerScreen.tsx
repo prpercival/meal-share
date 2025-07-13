@@ -261,7 +261,7 @@ export const PersonalMealPlannerScreen: React.FC = () => {
                 {index === 1 && mealTime === 'Lunch' ? (
                   <View>
                     <Text style={styles.mealName}>Mediterranean Quinoa Bowl</Text>
-                    <Text style={styles.mealSource}>From Sarah J. (Exchange)</Text>
+                    <Text style={styles.mealSource}>From Preston P. (Exchange)</Text>
                   </View>
                 ) : (
                   <TouchableOpacity style={styles.addMealButton}>

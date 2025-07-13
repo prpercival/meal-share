@@ -7,6 +7,7 @@ import {
   ScrollView,
   Switch,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContext } from '../context/AppContext';
@@ -95,6 +96,12 @@ export const SettingsScreen: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: theme.spacing.md,
+      overflow: 'hidden',
+    },
+    userAvatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 40,
     },
     userAvatarText: {
       ...theme.typography.h2,
@@ -225,9 +232,19 @@ export const SettingsScreen: React.FC = () => {
       {currentUser && (
         <View style={styles.userCard}>
           <View style={styles.userAvatar}>
-            <Text style={styles.userAvatarText}>
-              {currentUser.name.charAt(0)}
-            </Text>
+            {currentUser.avatar ? (
+              <Image 
+                source={currentUser.avatar}
+                style={styles.userAvatarImage}
+                placeholder={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=${theme.colors.primary.slice(1)}&color=fff&size=150&format=png`}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <Text style={styles.userAvatarText}>
+                {currentUser.name.charAt(0)}
+              </Text>
+            )}
           </View>
           <Text style={styles.userName}>{currentUser.name}</Text>
           <View style={styles.userStats}>
