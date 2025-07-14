@@ -1,4 +1,4 @@
-import { User, Recipe, MealExchange, CookingSession, PlannedMeal, ShoppingListItem } from '../types';
+import { User, Recipe, MealExchange, CookingSession, PlannedMeal, ShoppingListItem, PantryItem } from '../types';
 
 export const mockUsers: User[] = [
   {
@@ -403,4 +403,210 @@ export const mockShoppingListByUser: Record<string, ShoppingListItem[]> = {
 // Helper function to get shopping list for current user
 export const getCurrentUserShoppingList = (): ShoppingListItem[] => {
   return mockShoppingListByUser[currentUser.id] || [];
+};
+
+// Pantry items by user ID
+export const mockPantryByUser: Record<string, PantryItem[]> = {
+  // Preston Percival's pantry
+  '1': [
+    { 
+      id: 'p1', 
+      name: 'Olive oil', 
+      amount: 1, 
+      unit: 'bottle', 
+      category: 'condiments',
+      expirationDate: '2025-12-01',
+      dateAdded: '2025-06-15',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p2', 
+      name: 'Quinoa', 
+      amount: 0.5, 
+      unit: 'cups', 
+      category: 'pantry',
+      expirationDate: '2026-01-01',
+      dateAdded: '2025-07-01',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p3', 
+      name: 'Cherry tomatoes', 
+      amount: 0.5, 
+      unit: 'lb', 
+      category: 'produce',
+      expirationDate: '2025-07-16',
+      dateAdded: '2025-07-11',
+      location: 'Fridge'
+    },
+    { 
+      id: 'p4', 
+      name: 'Garlic', 
+      amount: 2, 
+      unit: 'cloves', 
+      category: 'produce',
+      expirationDate: '2025-07-20',
+      dateAdded: '2025-07-10',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p5', 
+      name: 'Salt', 
+      amount: 1, 
+      unit: 'container', 
+      category: 'spices',
+      dateAdded: '2025-01-01',
+      location: 'Pantry'
+    },
+  ],
+  
+  // Bradley Van Egeren's pantry
+  '2': [
+    { 
+      id: 'p6', 
+      name: 'Soy sauce', 
+      amount: 1, 
+      unit: 'bottle', 
+      category: 'condiments',
+      expirationDate: '2026-03-01',
+      dateAdded: '2025-05-15',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p7', 
+      name: 'Brown rice', 
+      amount: 2, 
+      unit: 'cups', 
+      category: 'pantry',
+      expirationDate: '2025-12-01',
+      dateAdded: '2025-06-01',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p8', 
+      name: 'Eggs', 
+      amount: 6, 
+      unit: 'large', 
+      category: 'dairy',
+      expirationDate: '2025-07-20',
+      dateAdded: '2025-07-12',
+      location: 'Fridge'
+    },
+  ],
+
+  // Andrew Fitton's pantry
+  '3': [
+    { 
+      id: 'p9', 
+      name: 'Olive oil', 
+      amount: 0.8, 
+      unit: 'bottle', 
+      category: 'condiments',
+      expirationDate: '2025-11-01',
+      dateAdded: '2025-06-01',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p10', 
+      name: 'Nutritional yeast', 
+      amount: 0.5, 
+      unit: 'cup', 
+      category: 'spices',
+      expirationDate: '2025-10-01',
+      dateAdded: '2025-05-01',
+      location: 'Pantry'
+    },
+  ],
+
+  // Jan Roessler's pantry
+  '4': [
+    { 
+      id: 'p11', 
+      name: 'Black pepper', 
+      amount: 1, 
+      unit: 'container', 
+      category: 'spices',
+      dateAdded: '2025-01-01',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p12', 
+      name: 'Butter', 
+      amount: 0.5, 
+      unit: 'stick', 
+      category: 'dairy',
+      expirationDate: '2025-07-25',
+      dateAdded: '2025-07-10',
+      location: 'Fridge'
+    },
+  ],
+
+  // Sidhartha Chakravarty's pantry
+  '5': [
+    { 
+      id: 'p13', 
+      name: 'Sesame oil', 
+      amount: 1, 
+      unit: 'bottle', 
+      category: 'condiments',
+      expirationDate: '2025-09-01',
+      dateAdded: '2025-04-01',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p14', 
+      name: 'Turmeric', 
+      amount: 1, 
+      unit: 'container', 
+      category: 'spices',
+      dateAdded: '2025-01-01',
+      location: 'Pantry'
+    },
+    { 
+      id: 'p15', 
+      name: 'Basmati rice', 
+      amount: 3, 
+      unit: 'cups', 
+      category: 'pantry',
+      expirationDate: '2026-01-01',
+      dateAdded: '2025-06-01',
+      location: 'Pantry'
+    },
+  ],
+};
+
+// Helper function to get pantry for current user
+export const getCurrentUserPantry = (): PantryItem[] => {
+  return mockPantryByUser[currentUser.id] || [];
+};
+
+// Helper function to check if ingredient is available in pantry
+export const checkPantryAvailability = (ingredientName: string, requiredAmount: number, unit: string): { available: boolean, pantryItem?: PantryItem, amountAvailable?: number } => {
+  const pantry = getCurrentUserPantry();
+  
+  // Simple name matching (in a real app, this would be more sophisticated)
+  const pantryItem = pantry.find(item => 
+    item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
+    ingredientName.toLowerCase().includes(item.name.toLowerCase())
+  );
+  
+  if (!pantryItem) {
+    return { available: false };
+  }
+  
+  // Simple unit matching (in a real app, this would handle unit conversions)
+  const unitMatch = pantryItem.unit === unit || 
+    (pantryItem.unit === 'bottle' && (unit === 'tbsp' || unit === 'tsp')) ||
+    (pantryItem.unit === 'container' && (unit === 'tbsp' || unit === 'tsp'));
+    
+  if (!unitMatch) {
+    return { available: false, pantryItem };
+  }
+  
+  const available = pantryItem.amount >= requiredAmount;
+  return { 
+    available, 
+    pantryItem, 
+    amountAvailable: pantryItem.amount 
+  };
 };

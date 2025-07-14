@@ -61,6 +61,11 @@ export const CommunityFeedScreen: React.FC = () => {
     console.log('Claiming portion for recipe:', recipeId);
   };
 
+  const handleScaleRecipe = (scaledRecipe: Recipe, servings: number) => {
+    console.log('Scaled recipe to', servings, 'servings:', scaledRecipe.title);
+    // In a real app, this could save the scaled recipe or add it to meal plan
+  };
+
   const navigateToPlanner = () => {
     navigation.navigate('Planner' as never);
   };
@@ -241,6 +246,7 @@ export const CommunityFeedScreen: React.FC = () => {
       recipe={item}
       onPress={() => console.log('View recipe:', item.id)}
       onClaimPortion={() => handleClaimPortion(item.id)}
+      onScaleRecipe={handleScaleRecipe}
     />
   );
 

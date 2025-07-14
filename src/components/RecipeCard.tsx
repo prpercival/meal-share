@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { Recipe } from '../types';
+import { RecipeScalingCalculator } from './RecipeScalingCalculator';
 
 interface RecipeCardProps {
   recipe: Recipe;
   onPress: () => void;
   onClaimPortion?: () => void;
+  onScaleRecipe?: (scaledRecipe: Recipe, servings: number) => void;
 }
 
 export const RecipeCard: React.FC<RecipeCardProps> = ({ 
   recipe, 
   onPress, 
-  onClaimPortion 
+  onClaimPortion,
+  onScaleRecipe 
 }) => {
   const { theme } = useTheme();
+  const [showScalingCalculator, setShowScalingCalculator] = useState(false);
+
+  const handleScaleRecipe = (scaledRecipe: Recipe, servings: number) => {
+    if (onScaleRecipe) {
+      onScaleRecipe(scaledRecipe, servings);
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -93,14 +103,34 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     },
     claimButton: {
       backgroundColor: theme.colors.secondary,
-      paddingVertical: theme.spacing.sm,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 8,
-      alignItems: 'center',
     },
     claimButtonText: {
       ...theme.typography.body,
       color: 'white',
+      fontWeight: '600',
+    },
+    buttonsContainer: {
+      flexDirection: 'row',
+      gap: theme.spacing.sm,
+    },
+    actionButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: 8,
+      gap: theme.spacing.xs,
+    },
+    scaleButton: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+    },
+    scaleButtonText: {
+      ...theme.typography.body,
+      color: theme.colors.primary,
       fontWeight: '600',
     },
   });
@@ -150,12 +180,31 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           ))}
         </View>
 
-        {onClaimPortion && (
-          <TouchableOpacity style={styles.claimButton} onPress={onClaimPortion}>
-            <Text style={styles.claimButtonText}>Claim a Portion</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.buttonsContainer}>
+          {onClaimPortion && (
+            <TouchableOpacity style={[styles.actionButton, styles.claimButton]} onPress={onClaimPortion}>
+              <Text style={styles.claimButtonText}>Claim a Portion</Text>
+            </TouchableOpacity>
+          )}
+          
+          {onScaleRecipe && (
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.scaleButton]} 
+              onPress={() => setShowScalingCalculator(true)}
+            >
+              <Ionicons name="calculator-outline" size={16} color={theme.colors.primary} />
+              <Text style={styles.scaleButtonText}>Scale Recipe</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      <RecipeScalingCalculator
+        recipe={recipe}
+        visible={showScalingCalculator}
+        onClose={() => setShowScalingCalculator(false)}
+        onScale={handleScaleRecipe}
+      />
     </TouchableOpacity>
   );
 };

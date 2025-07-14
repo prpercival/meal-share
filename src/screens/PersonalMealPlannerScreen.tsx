@@ -11,7 +11,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContext } from '../context/AppContext';
 import { PlannedMeal, ShoppingListItem, NutritionInfo } from '../types';
-import { mockRecipes, getCurrentUserPlannedMeals, getCurrentUserShoppingList } from '../data/mockData';
+import { PantryItem } from '../types/pantry';
+import { 
+  mockRecipes, 
+  getCurrentUserPlannedMeals, 
+  getCurrentUserShoppingList,
+  getCurrentUserPantry,
+  checkPantryAvailability 
+} from '../data/mockData';
 
 interface WeekDay {
   date: string;
@@ -22,10 +29,12 @@ interface WeekDay {
 export const PersonalMealPlannerScreen: React.FC = () => {
   const { theme } = useTheme();
   const { weeklyPlan, setWeeklyPlan } = useAppContext();
-  const [selectedTab, setSelectedTab] = useState<'calendar' | 'nutrition' | 'shopping'>('calendar');
+  const [selectedTab, setSelectedTab] = useState<'calendar' | 'nutrition' | 'shopping' | 'pantry'>('calendar');
   const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
   const [plannedMeals, setPlannedMeals] = useState<PlannedMeal[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
     // Generate current week starting from Sunday
@@ -52,6 +61,10 @@ export const PersonalMealPlannerScreen: React.FC = () => {
     // Load shopping list for the current user
     const userShoppingList = getCurrentUserShoppingList();
     setShoppingList(userShoppingList);
+
+    // Load pantry items for the current user
+    const userPantryItems = getCurrentUserPantry();
+    setPantryItems(userPantryItems);
   }, []);
 
   // Nutrition goals (daily targets)
@@ -354,6 +367,266 @@ export const PersonalMealPlannerScreen: React.FC = () => {
       color: 'white',
       fontWeight: '600',
     },
+    // Enhanced nutrition dashboard styles
+    nutritionCircle: {
+      alignItems: 'center',
+      marginBottom: theme.spacing.sm,
+    },
+    nutritionUnit: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      fontSize: 10,
+    },
+    nutritionGoal: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      fontSize: 10,
+      marginTop: theme.spacing.xs,
+    },
+    weeklyStatsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    weeklyStatItem: {
+      width: '48%',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      padding: theme.spacing.sm,
+      borderRadius: 8,
+      marginBottom: theme.spacing.sm,
+    },
+    weeklyStatValue: {
+      ...theme.typography.h3,
+      fontWeight: 'bold',
+      marginBottom: theme.spacing.xs,
+    },
+    weeklyStatLabel: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      marginBottom: theme.spacing.xs,
+    },
+    weeklyStatBar: {
+      width: '100%',
+      height: 4,
+      backgroundColor: theme.colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    weeklyStatBarFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
+    tipsContainer: {
+      marginTop: theme.spacing.sm,
+    },
+    tipItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      padding: theme.spacing.md,
+      borderRadius: 8,
+      marginBottom: theme.spacing.sm,
+    },
+    tipText: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      marginLeft: theme.spacing.sm,
+      flex: 1,
+    },
+    mealBreakdownItem: {
+      backgroundColor: theme.colors.background,
+      padding: theme.spacing.md,
+      borderRadius: 8,
+      marginBottom: theme.spacing.sm,
+    },
+    mealBreakdownHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.sm,
+    },
+    mealBreakdownTime: {
+      ...theme.typography.caption,
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+    mealBreakdownName: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      flex: 1,
+      marginLeft: theme.spacing.sm,
+    },
+    mealBreakdownNutrition: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    mealBreakdownStat: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+    },
+    // Pantry integration styles
+    pantryContainer: {
+      backgroundColor: theme.colors.surface,
+      margin: theme.spacing.md,
+      padding: theme.spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+    },
+    pantryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
+    pantryTitle: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginLeft: theme.spacing.sm,
+    },
+    pantrySubtitle: {
+      ...theme.typography.body,
+      color: theme.colors.textSecondary,
+      marginBottom: theme.spacing.sm,
+    },
+    autoFillButton: {
+      backgroundColor: theme.colors.primary,
+      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: 6,
+      alignItems: 'center',
+    },
+    autoFillButtonText: {
+      ...theme.typography.caption,
+      color: 'white',
+      fontWeight: '600',
+    },
+    shoppingItemInPantry: {
+      borderLeftWidth: 4,
+      borderLeftColor: theme.colors.success,
+    },
+    shoppingItemHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
+    pantryBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.success + '20',
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: 12,
+    },
+    pantryBadgeText: {
+      ...theme.typography.caption,
+      color: theme.colors.success,
+      marginLeft: theme.spacing.xs,
+      fontSize: 10,
+    },
+    shoppingItemDetails: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    shoppingItemPantryAmount: {
+      ...theme.typography.caption,
+      color: theme.colors.success,
+    },
+    expirationDate: {
+      ...theme.typography.caption,
+      color: theme.colors.warning,
+      fontSize: 10,
+      marginTop: theme.spacing.xs,
+    },
+    // Pantry styles
+    pantryViewHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: theme.spacing.md,
+    },
+    pantryHeaderTitle: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    pantryStats: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+    },
+    pantryItemCard: {
+      backgroundColor: theme.colors.surface,
+      padding: theme.spacing.md,
+      borderRadius: 8,
+      marginBottom: theme.spacing.sm,
+      borderLeftWidth: 4,
+    },
+    pantryItemHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.sm,
+    },
+    pantryItemName: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      fontWeight: '600',
+    },
+    pantryItemCategory: {
+      backgroundColor: theme.colors.primary + '20',
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: 12,
+    },
+    pantryItemCategoryText: {
+      ...theme.typography.caption,
+      color: theme.colors.primary,
+      fontSize: 10,
+      fontWeight: '600',
+    },
+    pantryItemDetails: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    pantryItemAmount: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    pantryItemLocation: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+    },
+    pantryItemExpiring: {
+      borderLeftColor: theme.colors.warning,
+    },
+    pantryItemExpired: {
+      borderLeftColor: theme.colors.error,
+    },
+    pantryItemFresh: {
+      borderLeftColor: theme.colors.success,
+    },
+    categoryFilter: {
+      flexDirection: 'row',
+      marginBottom: theme.spacing.md,
+    },
+    categoryButton: {
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: 20,
+      marginRight: theme.spacing.sm,
+      backgroundColor: theme.colors.border,
+    },
+    categoryButtonActive: {
+      backgroundColor: theme.colors.primary,
+    },
+    categoryButtonText: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+    },
+    categoryButtonTextActive: {
+      color: 'white',
+    },
   });
 
   const mealTimes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -432,6 +705,7 @@ export const PersonalMealPlannerScreen: React.FC = () => {
         current: currentNutrition.calories,
         goal: nutritionGoals.calories,
         unit: '',
+        color: '#FF6B6B',
       },
       {
         key: 'protein',
@@ -439,6 +713,7 @@ export const PersonalMealPlannerScreen: React.FC = () => {
         current: currentNutrition.protein,
         goal: nutritionGoals.protein,
         unit: 'g',
+        color: '#4ECDC4',
       },
       {
         key: 'carbs',
@@ -446,6 +721,7 @@ export const PersonalMealPlannerScreen: React.FC = () => {
         current: currentNutrition.carbs, 
         goal: nutritionGoals.carbs,
         unit: 'g',
+        color: '#45B7D1',
       },
       {
         key: 'fat',
@@ -453,11 +729,52 @@ export const PersonalMealPlannerScreen: React.FC = () => {
         current: currentNutrition.fat,
         goal: nutritionGoals.fat,
         unit: 'g',
+        color: '#F7DC6F',
       },
     ];
 
+    // Calculate weekly nutrition average
+    const calculateWeeklyNutrition = () => {
+      const thisWeek = weekDays.map(day => day.date);
+      const weeklyMeals = plannedMeals.filter(meal => 
+        thisWeek.includes(meal.scheduledDate)
+      );
+      
+      let weeklyTotal = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+      let daysWithMeals = 0;
+      
+      thisWeek.forEach(date => {
+        const dayMeals = weeklyMeals.filter(meal => meal.scheduledDate === date);
+        if (dayMeals.length > 0) {
+          daysWithMeals++;
+          dayMeals.forEach(meal => {
+            const recipe = mockRecipes.find(r => r.id === meal.recipeId);
+            if (recipe) {
+              weeklyTotal.calories += recipe.nutritionInfo.calories;
+              weeklyTotal.protein += recipe.nutritionInfo.protein;
+              weeklyTotal.carbs += recipe.nutritionInfo.carbs;
+              weeklyTotal.fat += recipe.nutritionInfo.fat;
+              weeklyTotal.fiber += recipe.nutritionInfo.fiber;
+            }
+          });
+        }
+      });
+      
+      const avgDays = Math.max(daysWithMeals, 1);
+      return {
+        calories: Math.round(weeklyTotal.calories / avgDays),
+        protein: Math.round(weeklyTotal.protein / avgDays),
+        carbs: Math.round(weeklyTotal.carbs / avgDays),
+        fat: Math.round(weeklyTotal.fat / avgDays),
+        fiber: Math.round(weeklyTotal.fiber / avgDays),
+      };
+    };
+
+    const weeklyAverage = calculateWeeklyNutrition();
+
     return (
       <ScrollView style={styles.nutritionContainer}>
+        {/* Today's Progress */}
         <View style={styles.nutritionCard}>
           <Text style={styles.nutritionTitle}>Today's Nutrition Progress</Text>
           <View style={styles.nutritionGrid}>
@@ -468,55 +785,138 @@ export const PersonalMealPlannerScreen: React.FC = () => {
               
               return (
                 <View key={item.key} style={styles.nutritionItem}>
-                  <Text style={styles.nutritionValue}>
-                    {Math.round(item.current)}{item.unit}
-                  </Text>
+                  <View style={styles.nutritionCircle}>
+                    <Text style={styles.nutritionValue}>
+                      {Math.round(item.current)}{item.unit}
+                    </Text>
+                  </View>
                   <Text style={styles.nutritionLabel}>{item.label}</Text>
                   <View style={styles.nutritionProgress}>
                     <View 
                       style={[
                         styles.nutritionProgressBar,
+                        { backgroundColor: item.color },
                         isOverGoal && styles.nutritionProgressOverflow,
                         { width: `${Math.min(progress * 100, 100)}%` }
                       ]} 
                     />
                   </View>
-                  <Text style={styles.nutritionSubtext}>
+                  <Text style={[
+                    styles.nutritionSubtext,
+                    isOverGoal && { color: '#FF6B6B' }
+                  ]}>
                     {isOverGoal 
-                      ? `${Math.round(item.current - item.goal)}${item.unit} over`
+                      ? `+${Math.round(item.current - item.goal)}${item.unit}`
                       : `${Math.round(remaining)}${item.unit} left`
                     }
+                  </Text>
+                  <Text style={styles.nutritionGoal}>
+                    Goal: {item.goal}{item.unit}
                   </Text>
                 </View>
               );
             })}
           </View>
-          
-          {plannedMeals.filter(meal => meal.scheduledDate === new Date().toISOString().split('T')[0]).length > 0 && (
-            <View style={{ marginTop: theme.spacing.lg }}>
-              <Text style={[styles.nutritionLabel, { marginBottom: theme.spacing.sm }]}>
-                Today's Planned Meals:
+        </View>
+
+        {/* Weekly Overview */}
+        <View style={styles.nutritionCard}>
+          <Text style={styles.nutritionTitle}>Weekly Average</Text>
+          <View style={styles.weeklyStatsGrid}>
+            {nutritionItems.map(item => {
+              const weeklyValue = weeklyAverage[item.key as keyof typeof weeklyAverage];
+              const weeklyProgress = weeklyValue / item.goal;
+              
+              return (
+                <View key={`weekly-${item.key}`} style={styles.weeklyStatItem}>
+                  <Text style={[styles.weeklyStatValue, { color: item.color }]}>
+                    {weeklyValue}{item.unit}
+                  </Text>
+                  <Text style={styles.weeklyStatLabel}>{item.label}</Text>
+                  <View style={styles.weeklyStatBar}>
+                    <View 
+                      style={[
+                        styles.weeklyStatBarFill,
+                        { backgroundColor: item.color, width: `${Math.min(weeklyProgress * 100, 100)}%` }
+                      ]} 
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Nutrition Tips */}
+        <View style={styles.nutritionCard}>
+          <Text style={styles.nutritionTitle}>Smart Recommendations</Text>
+          <View style={styles.tipsContainer}>
+            {currentNutrition.protein < nutritionGoals.protein * 0.8 && (
+              <View style={styles.tipItem}>
+                <Ionicons name="fitness" size={20} color="#4ECDC4" />
+                <Text style={styles.tipText}>
+                  Add more protein-rich meals to meet your daily goal
+                </Text>
+              </View>
+            )}
+            {currentNutrition.calories > nutritionGoals.calories * 1.1 && (
+              <View style={styles.tipItem}>
+                <Ionicons name="warning" size={20} color="#FF6B6B" />
+                <Text style={styles.tipText}>
+                  Consider lighter meals to stay within calorie goals
+                </Text>
+              </View>
+            )}
+            {currentNutrition.fiber < 25 && (
+              <View style={styles.tipItem}>
+                <Ionicons name="leaf" size={20} color="#52C41A" />
+                <Text style={styles.tipText}>
+                  Include more vegetables and whole grains for fiber
+                </Text>
+              </View>
+            )}
+            <View style={styles.tipItem}>
+              <Ionicons name="trending-up" size={20} color="#1890FF" />
+              <Text style={styles.tipText}>
+                Weekly average: {Math.round((weeklyAverage.calories / nutritionGoals.calories) * 100)}% of daily calorie goal
               </Text>
-              {plannedMeals.filter(meal => meal.scheduledDate === new Date().toISOString().split('T')[0]).map(meal => {
-                const recipe = mockRecipes.find(r => r.id === meal.recipeId);
-                return recipe ? (
-                  <View key={meal.id} style={{ 
-                    flexDirection: 'row', 
-                    justifyContent: 'space-between',
-                    marginBottom: theme.spacing.xs,
-                  }}>
-                    <Text style={styles.nutritionSubtext}>
-                      {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}: {recipe.title}
+            </View>
+          </View>
+        </View>
+
+        {/* Today's Meals Breakdown */}
+        {plannedMeals.filter(meal => meal.scheduledDate === new Date().toISOString().split('T')[0]).length > 0 && (
+          <View style={styles.nutritionCard}>
+            <Text style={styles.nutritionTitle}>Today's Planned Meals</Text>
+            {plannedMeals.filter(meal => meal.scheduledDate === new Date().toISOString().split('T')[0]).map(meal => {
+              const recipe = mockRecipes.find(r => r.id === meal.recipeId);
+              return recipe ? (
+                <View key={meal.id} style={styles.mealBreakdownItem}>
+                  <View style={styles.mealBreakdownHeader}>
+                    <Text style={styles.mealBreakdownTime}>
+                      {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
                     </Text>
-                    <Text style={styles.nutritionSubtext}>
+                    <Text style={styles.mealBreakdownName}>{recipe.title}</Text>
+                  </View>
+                  <View style={styles.mealBreakdownNutrition}>
+                    <Text style={styles.mealBreakdownStat}>
                       {recipe.nutritionInfo.calories} cal
                     </Text>
+                    <Text style={styles.mealBreakdownStat}>
+                      {recipe.nutritionInfo.protein}g protein
+                    </Text>
+                    <Text style={styles.mealBreakdownStat}>
+                      {recipe.nutritionInfo.carbs}g carbs
+                    </Text>
+                    <Text style={styles.mealBreakdownStat}>
+                      {recipe.nutritionInfo.fat}g fat
+                    </Text>
                   </View>
-                ) : null;
-              })}
-            </View>
-          )}
-        </View>
+                </View>
+              ) : null;
+            })}
+          </View>
+        )}
       </ScrollView>
     );
   };
@@ -526,40 +926,94 @@ export const PersonalMealPlannerScreen: React.FC = () => {
     const totalItems = shoppingList.length;
     const completionPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
+    // Calculate pantry availability
+    const itemsInPantry = shoppingList.filter(item => {
+      const availability = checkPantryAvailability(item.ingredient, item.amount, item.unit);
+      return availability.available;
+    }).length;
+
     return (
       <View style={styles.shoppingTabContainer}>
+        {/* Pantry Summary */}
+        <View style={styles.pantryContainer}>
+          <View style={styles.pantryHeader}>
+            <Ionicons name="home-outline" size={20} color={theme.colors.primary} />
+            <Text style={styles.pantryTitle}>Pantry Check</Text>
+          </View>
+          <Text style={styles.pantrySubtitle}>
+            {itemsInPantry} of {totalItems} items available in your pantry
+          </Text>
+          {itemsInPantry > 0 && (
+            <TouchableOpacity style={styles.autoFillButton}>
+              <Text style={styles.autoFillButtonText}>
+                Auto-mark {itemsInPantry} pantry items
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <ScrollView 
           style={styles.shoppingContainer}
           contentContainerStyle={styles.shoppingScrollContent}
         >
           {/* Shopping List Items */}
-          {shoppingList.map(item => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={styles.shoppingItem}
-              onPress={() => toggleShoppingItem(item.id)}
-            >
-              <View style={[styles.checkbox, item.purchased && styles.checkboxChecked]}>
-                {item.purchased && (
-                  <Ionicons name="checkmark" size={16} color="white" />
-                )}
-              </View>
-              <View style={styles.shoppingItemText}>
-                <Text style={[
-                  styles.shoppingItemName,
-                  item.purchased && { textDecorationLine: 'line-through', opacity: 0.6 }
-                ]}>
-                  {item.ingredient}
-                </Text>
-                <Text style={[
-                  styles.shoppingItemAmount,
-                  item.purchased && { opacity: 0.6 }
-                ]}>
-                  {item.amount} {item.unit}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {shoppingList.map(item => {
+            const pantryCheck = checkPantryAvailability(item.ingredient, item.amount, item.unit);
+            
+            return (
+              <TouchableOpacity 
+                key={item.id} 
+                style={[
+                  styles.shoppingItem,
+                  pantryCheck.available && styles.shoppingItemInPantry
+                ]}
+                onPress={() => toggleShoppingItem(item.id)}
+              >
+                <View style={[styles.checkbox, item.purchased && styles.checkboxChecked]}>
+                  {item.purchased && (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  )}
+                </View>
+                <View style={styles.shoppingItemText}>
+                  <View style={styles.shoppingItemHeader}>
+                    <Text style={[
+                      styles.shoppingItemName,
+                      item.purchased && { textDecorationLine: 'line-through', opacity: 0.6 }
+                    ]}>
+                      {item.ingredient}
+                    </Text>
+                    {pantryCheck.available && (
+                      <View style={styles.pantryBadge}>
+                        <Ionicons name="home" size={12} color={theme.colors.success} />
+                        <Text style={styles.pantryBadgeText}>In Pantry</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.shoppingItemDetails}>
+                    <Text style={[
+                      styles.shoppingItemAmount,
+                      item.purchased && { opacity: 0.6 }
+                    ]}>
+                      Need: {item.amount} {item.unit}
+                    </Text>
+                    {pantryCheck.available && pantryCheck.amountAvailable && (
+                      <Text style={[
+                        styles.shoppingItemPantryAmount,
+                        item.purchased && { opacity: 0.6 }
+                      ]}>
+                        Have: {pantryCheck.amountAvailable} {pantryCheck.pantryItem?.unit}
+                      </Text>
+                    )}
+                  </View>
+                  {pantryCheck.pantryItem?.expirationDate && (
+                    <Text style={styles.expirationDate}>
+                      Expires: {new Date(pantryCheck.pantryItem.expirationDate).toLocaleDateString()}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
         
         {/* Fixed Generate Button with Progress */}
@@ -596,6 +1050,137 @@ export const PersonalMealPlannerScreen: React.FC = () => {
     );
   };
 
+  const renderPantryTab = () => {
+    const categories = ['all', 'produce', 'dairy', 'meat', 'pantry', 'frozen', 'beverages', 'condiments', 'spices'];
+    
+    const filteredItems = selectedCategory === 'all' 
+      ? pantryItems 
+      : pantryItems.filter(item => item.category === selectedCategory);
+    
+    const getExpirationStatus = (item: PantryItem) => {
+      if (!item.expirationDate) return 'fresh';
+      
+      const today = new Date();
+      const expDate = new Date(item.expirationDate);
+      const daysUntilExpiry = Math.floor((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilExpiry < 0) return 'expired';
+      if (daysUntilExpiry <= 3) return 'expiring';
+      return 'fresh';
+    };
+    
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'expired': return styles.pantryItemExpired;
+        case 'expiring': return styles.pantryItemExpiring;
+        default: return styles.pantryItemFresh;
+      }
+    };
+
+    return (
+      <View style={styles.shoppingTabContainer}>
+        <View style={[styles.pantryContainer, { margin: 0, marginHorizontal: theme.spacing.md, marginTop: theme.spacing.md }]}>
+          <View style={styles.pantryViewHeader}>
+            <View>
+              <Text style={styles.pantryHeaderTitle}>My Pantry</Text>
+              <Text style={styles.pantryStats}>
+                {filteredItems.length} items • {pantryItems.filter(item => getExpirationStatus(item) === 'expiring').length} expiring soon
+              </Text>
+            </View>
+            <Ionicons name="nutrition" size={24} color={theme.colors.primary} />
+          </View>
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
+            {categories.map(category => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category && styles.categoryButtonActive
+                ]}
+                onPress={() => setSelectedCategory(category)}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  selectedCategory === category && styles.categoryButtonTextActive
+                ]}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <ScrollView 
+          style={styles.shoppingContainer}
+          contentContainerStyle={styles.shoppingScrollContent}
+        >
+          {filteredItems.map(item => {
+            const status = getExpirationStatus(item);
+            
+            return (
+              <View 
+                key={item.id} 
+                style={[styles.pantryItemCard, getStatusColor(status)]}
+              >
+                <View style={styles.pantryItemHeader}>
+                  <Text style={styles.pantryItemName}>{item.name}</Text>
+                  <View style={styles.pantryItemCategory}>
+                    <Text style={styles.pantryItemCategoryText}>
+                      {item.category}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.pantryItemDetails}>
+                  <View>
+                    <Text style={styles.pantryItemAmount}>
+                      {item.amount} {item.unit}
+                    </Text>
+                    {item.location && (
+                      <Text style={styles.pantryItemLocation}>
+                        📍 {item.location}
+                      </Text>
+                    )}
+                  </View>
+                  
+                  <View style={{ alignItems: 'flex-end' }}>
+                    {item.expirationDate && (
+                      <Text style={[
+                        styles.expirationDate,
+                        status === 'expired' && { color: theme.colors.error },
+                        status === 'expiring' && { color: theme.colors.warning }
+                      ]}>
+                        {status === 'expired' ? '⚠️ Expired' : 
+                         status === 'expiring' ? '⏰ Expires soon' :
+                         `Expires ${new Date(item.expirationDate).toLocaleDateString()}`}
+                      </Text>
+                    )}
+                    <Text style={styles.pantryItemLocation}>
+                      Added {new Date(item.dateAdded).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+          
+          {filteredItems.length === 0 && (
+            <View style={[styles.nutritionCard, { alignItems: 'center', padding: theme.spacing.xl }]}>
+              <Ionicons name="basket-outline" size={48} color={theme.colors.textSecondary} />
+              <Text style={[styles.nutritionTitle, { marginTop: theme.spacing.md }]}>
+                No items in {selectedCategory === 'all' ? 'pantry' : selectedCategory}
+              </Text>
+              <Text style={styles.nutritionSubtext}>
+                Add items to your pantry to track what you have at home
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  };
+
   const renderContent = () => {
     switch (selectedTab) {
       case 'calendar':
@@ -604,6 +1189,8 @@ export const PersonalMealPlannerScreen: React.FC = () => {
         return renderNutritionTab();
       case 'shopping':
         return renderShoppingTab();
+      case 'pantry':
+        return renderPantryTab();
       default:
         return null;
     }
@@ -656,6 +1243,19 @@ export const PersonalMealPlannerScreen: React.FC = () => {
             ]}
           >
             Shopping
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, selectedTab === 'pantry' && styles.tabButtonActive]}
+          onPress={() => setSelectedTab('pantry')}
+        >
+          <Text
+            style={[
+              styles.tabButtonText,
+              selectedTab === 'pantry' && styles.tabButtonTextActive,
+            ]}
+          >
+            Pantry
           </Text>
         </TouchableOpacity>
       </View>

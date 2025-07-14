@@ -55,6 +55,8 @@ export type DietaryTag =
   | 'paleo' 
   | 'nut-free';
 
+export * from './pantry';
+
 export interface MealExchange {
   id: string;
   recipeId: string;
