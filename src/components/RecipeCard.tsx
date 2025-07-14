@@ -69,6 +69,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       flexWrap: 'wrap',
       marginBottom: theme.spacing.md,
     },
+    nutritionRow: {
+      marginBottom: theme.spacing.sm,
+    },
+    nutritionText: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      fontSize: 11,
+      fontWeight: '500',
+    },
     tag: {
       backgroundColor: theme.colors.primary,
       paddingHorizontal: theme.spacing.sm,
@@ -125,6 +134,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             <Ionicons name="bar-chart-outline" size={16} color={theme.colors.textSecondary} />
             <Text style={styles.infoText}>{recipe.difficulty}</Text>
           </View>
+        </View>
+
+        <View style={styles.nutritionRow}>
+          <Text style={styles.nutritionText}>
+            {recipe.nutritionInfo.calories} cal • {recipe.nutritionInfo.protein}g protein • {recipe.nutritionInfo.carbs}g carbs • {recipe.nutritionInfo.fat}g fat
+          </Text>
         </View>
 
         <View style={styles.tagsContainer}>

@@ -8,6 +8,7 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContext } from '../context/AppContext';
 import { RecipeCard } from '../components/RecipeCard';
@@ -26,6 +27,7 @@ const dietaryFilters: DietaryTag[] = [
 export const CommunityFeedScreen: React.FC = () => {
   const { theme } = useTheme();
   const { recipes, setRecipes } = useAppContext();
+  const navigation = useNavigation();
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [activeFilters, setActiveFilters] = useState<DietaryTag[]>([]);
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
@@ -57,6 +59,10 @@ export const CommunityFeedScreen: React.FC = () => {
   const handleClaimPortion = (recipeId: string) => {
     // Handle claiming a portion
     console.log('Claiming portion for recipe:', recipeId);
+  };
+
+  const navigateToPlanner = () => {
+    navigation.navigate('Planner' as never);
   };
 
   const renderFilters = () => {
@@ -247,7 +253,10 @@ export const CommunityFeedScreen: React.FC = () => {
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.weeklyCalendarButton}>
+      <TouchableOpacity 
+        style={styles.weeklyCalendarButton}
+        onPress={navigateToPlanner}
+      >
         <Ionicons name="calendar-outline" size={24} color={theme.colors.primary} />
         <Text style={styles.calendarButtonText}>
           View This Week's Meal Calendar
