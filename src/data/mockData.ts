@@ -5,7 +5,7 @@ export const mockUsers: User[] = [
     id: '1',
     name: 'Preston Percival',
     email: 'ppercival3@gatech.edu',
-    avatar: 'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png',
+    avatar: require('../../assets/avatars/preston.jpg'),
     location: {
       latitude: 40.7128,
       longitude: -74.0060,
@@ -20,7 +20,7 @@ export const mockUsers: User[] = [
     id: '2',
     name: 'Bradley Van Egeren',
     email: 'begeren3@gatech.edu',
-    avatar: 'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png',
+    avatar: require('../../assets/avatars/brad.jpg'),
     location: {
       latitude: 40.7580,
       longitude: -73.9855,
@@ -35,7 +35,7 @@ export const mockUsers: User[] = [
     id: '3',
     name: 'Andrew Fitton',
     email: 'afitton3@gatech.edu',
-    avatar: 'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png',
+    avatar: require('../../assets/avatars/drew.jpg'),
     location: {
       latitude: 40.7282,
       longitude: -73.7949,
@@ -50,7 +50,7 @@ export const mockUsers: User[] = [
     id: '4',
     name: 'Jan Roessler',
     email: 'jroessler3@gatech.edu',
-    avatar: 'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png',
+    avatar: require('../../assets/avatars/jan.jpg'),
     location: {
       latitude: 40.7282,
       longitude: -73.7949,
@@ -65,7 +65,7 @@ export const mockUsers: User[] = [
     id: '5',
     name: 'Sidhartha Chakravarty',
     email: 'sidhartha.chakravarty@gatech.edu',
-    avatar: 'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png',
+    avatar: require('../../assets/avatars/sid.jpg'),
     location: {
       latitude: 40.7282,
       longitude: -73.7949,
