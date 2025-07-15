@@ -1,125 +1,166 @@
-# MealShare - Social Meal Prepping Application
+# MealShare 🍽️
 
-## Application Description
+A React Native social meal prepping application that connects users in local communities to share the burden and costs of healthy meal preparation.
 
-MealShare is a social meal prepping platform that connects users in local communities to share the burden and costs of healthy meal preparation. The application addresses common challenges in meal prepping: time constraints, food waste, lack of variety, and high grocery costs.
+## 🎯 About
 
-**Core Concept**: Users prepare family-sized portions of one meal per week and exchange portions with nearby community members. This creates a diverse weekly meal plan while requiring users to cook only once per week.
+MealShare solves common meal prepping challenges by enabling community members to prepare family-sized portions of one meal per week and exchange portions with neighbors. This creates diverse weekly meal plans while requiring users to cook only once per week.
 
-**Key Features**:
-- Location-based user matching within local communities
-- Recipe sharing and meal planning coordination
-- Dietary preference and restriction filtering
-- Meal exchange scheduling and logistics
-- Community ratings and trust-building features
-- Cost-splitting and nutritional tracking
+**Core Benefits:**
+- Reduce meal prep time from hours to once per week
+- Cut grocery costs through bulk cooking and sharing
+- Enjoy meal variety without extensive planning
+- Build community connections through food sharing
+- Maintain healthy eating habits with less effort
 
-**Target Users**: Health-conscious individuals and families who want to maintain a diverse, nutritious diet while minimizing time spent cooking and grocery shopping.
+## ✨ Features
 
-## Core Application Screens
+### 🏠 Community Feed & Recipe Discovery
+- Browse weekly meal calendar from community members
+- Filter recipes by dietary preferences (vegetarian, gluten-free, etc.)
+- Claim portions from available meals
+- Share and discover new recipes
+- View nutritional information and cooking difficulty
 
-### 1. Community Feed & Recipe Discovery
-**Purpose**: Central hub for discovering recipes, viewing community meal plans, and coordinating weekly exchanges
+### 🔄 Meal Exchange Hub
+- Manage active meal exchanges with status tracking
+- Choose between "Cook & Trade" or "Cook Together" sessions
+- Coordinate pickup/delivery logistics with interactive map
+- Organize group cooking events with RSVP functionality
+- Rate and review completed exchanges
 
-**Key Elements**:
-- Weekly meal calendar showing what community members are preparing
-- Recipe cards with photos, ingredients, dietary tags, and prep difficulty
-- "Claim a portion" buttons for available meals
-- Filter options (vegetarian, gluten-free, low-carb, etc.)
+### 📅 Personal Meal Planner
+- Plan weekly meals with confirmed exchanges
+- Track nutrition goals and macro intake
+- Generate shopping lists from planned recipes
+- Monitor cooking schedule and prep times
+- Manage personal recipe collection and pantry items
+
+### 👥 Social Features
+- Connect with local meal prep community
+- View user profiles with cooking specialties and ratings
+- Chat functionality for exchange coordination
 - Community announcements and meal prep tips
-- User profiles showing cooking specialties and ratings
 
-**User Actions**: Browse available meals for the week, reserve portions, share new recipes, view nutritional information
+### ⚙️ Settings & Customization
+- Light/dark theme toggle
+- Notification preferences
+- Dietary restriction settings
+- Account and profile management
 
-### 2. Meal Exchange Hub
-**Purpose**: Manage active exchanges, coordinate pickup/delivery logistics, and track meal commitments
+## 🛠️ Tech Stack
 
-**Key Elements**:
-- Current week's exchange dashboard showing committed meals
-- Exchange type selector: "Cook & Trade" vs "Cook Together"
-- Interactive map with pickup locations and cooking session venues
-- Chat functionality for coordinating with exchange partners
-- Group cooking session organizer with RSVP functionality
-- Meal preparation checklist and reminders
-- Photo upload for completed meals (quality assurance)
-- Rating system for completed exchanges
+- **Framework**: React Native with Expo (~53.0.17)
+- **Language**: TypeScript
+- **Navigation**: React Navigation v7 with bottom tabs
+- **State Management**: React Context API
+- **UI Components**: React Native Elements
+- **Icons**: Expo Vector Icons
+- **Image Handling**: expo-image for optimized loading
+- **Styling**: StyleSheet with centralized theming
 
-**User Actions**: Choose exchange method, schedule pickups or cooking sessions, communicate with partners, organize group cooking events, confirm meal completions, provide feedback
+## 🚀 Getting Started
 
-### 3. Personal Meal Planner & Tracker
-**Purpose**: Plan upcoming meals, track nutritional goals, and manage cooking schedule
+### Prerequisites
 
-**Key Elements**:
-- Personal weekly meal calendar with confirmed exchanges
-- Grocery shopping list generator based on committed recipes
-- Nutritional dashboard tracking calories, macros, and dietary goals
-- Cooking schedule with prep time estimates
-- Personal recipe collection and favorites
-- Progress tracking for health and cost-saving goals
+- Node.js (v18 or later)
+- npm or yarn
+- iOS Simulator or Android Emulator (optional)
 
-**User Actions**: Plan next week's contribution, generate shopping lists, track nutrition, schedule cooking time, save favorite recipes
+*Note: Expo CLI is not required globally since we use npx*
 
-## Tech Stack & Development Requirements
+### Installation
 
-### Core Framework
-- **React Native with Expo**: Cross-platform mobile development for iOS and Android
-- **Expo Router**: File-based routing system for navigation between screens
-- **React Context API**: Global state management for user data, theme preferences, and app state
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/meal-share.git
+cd meal-share
+```
 
-### UI/UX Requirements
-- **Theming System**: 
-  - Centralized theme configuration with light and dark mode support
-  - Consistent color palette, typography, and spacing tokens
-  - Theme toggle functionality accessible from user settings
-  - System preference detection for automatic theme selection
+2. Install dependencies:
+```bash
+npm install
+```
 
-- **Design Principles**:
-  - Material Design 3 or iOS Human Interface Guidelines compliance
-  - Consistent iconography using vector icons (Expo Vector Icons)
-  - Responsive design for various screen sizes
-  - Intuitive gesture controls and animations
-  - Loading states and error handling UX patterns
+3. Start the development server:
+```bash
+npx expo start
+```
 
-### Development Structure
-- **Component Architecture**:
-  - Reusable UI components library
-  - Screen-specific components organized by feature
-  - Custom hooks for shared logic
-  - TypeScript for type safety and better developer experience
+4. Run on your preferred platform:
+```bash
+npx expo start --ios     # iOS Simulator
+npx expo start --android # Android Emulator
+npx expo start --web     # Web browser
+```
 
-- **Mock Data Strategy**:
-  - JSON files for static mock data (users, recipes, exchanges)
-  - Mock API service layer to simulate backend calls
-  - Realistic data sets including diverse user profiles and dietary preferences
-  - Sample images and content for recipe cards and user avatars
+## 📱 Screenshots
 
-### Key Libraries & Tools
-- **UI Components**: React Native Elements or NativeBase for base components
-- **Icons**: @expo/vector-icons for consistent iconography
-- **Image Handling**: expo-image for optimized image loading and caching
-- **Maps**: react-native-maps for location-based features
-- **Camera**: expo-camera for meal photo uploads
-- **Storage**: AsyncStorage for local data persistence
-- **Styling**: StyleSheet with theme variables or styled-components
+*Coming soon - screenshots of the main app screens*
 
-### Prototype-Specific Considerations
-- **Navigation Flow**: Implement tab-based navigation with stack navigators for each main section
-- **State Management**: Use Context API to manage user authentication state, theme preferences, and active exchanges
-- **Performance**: Implement lazy loading for images and optimize list rendering for community feeds
-- **Testing Strategy**: Include component testing setup and accessibility testing tools
-- **Development Workflow**: Hot reload enabled, clear file structure, and component documentation
+## 🏗️ Project Structure
 
-### File Structure Recommendation
 ```
 src/
 ├── components/           # Reusable UI components
-├── screens/             # Screen components (Feed, Exchange, Planner)
+│   ├── RecipeCard.tsx
+│   └── RecipeScalingCalculator.tsx
+├── screens/             # Main application screens
+│   ├── CommunityFeedScreen.tsx
+│   ├── MealExchangeHubScreen.tsx
+│   ├── PersonalMealPlannerScreen.tsx
+│   ├── FriendsScreen.tsx
+│   └── SettingsScreen.tsx
 ├── navigation/          # Navigation configuration
 ├── context/             # React Context providers
-├── theme/               # Theme configuration and constants
-├── services/            # Mock API services
-├── data/                # Mock data files
-├── hooks/               # Custom React hooks
+├── data/                # Mock data and services
+├── theme/               # Theming and design tokens
 ├── types/               # TypeScript type definitions
 └── utils/               # Helper functions
 ```
+
+## 🎨 Design System
+
+- **Theme Support**: Light and dark mode with automatic system detection
+- **Typography**: Consistent font scaling and hierarchy
+- **Colors**: Material Design-inspired color palette
+- **Components**: Reusable card layouts, buttons, and form elements
+- **Accessibility**: Proper contrast ratios and text scaling support
+
+## 📊 Current Status
+
+This is a fully functional prototype with:
+- ✅ Complete UI implementation for all core screens
+- ✅ Mock data service with realistic sample content
+- ✅ Full navigation flow between all features
+- ✅ Responsive design for various screen sizes
+- ✅ Theme system with light/dark mode support
+- ✅ TypeScript implementation with proper typing
+
+### Ready for:
+- Backend API integration
+- Real user authentication
+- GPS/Maps integration for pickup locations
+- Push notifications for exchange updates
+- Camera functionality for meal photo uploads
+- Real-time messaging between users
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 Contact
+
+For questions or suggestions, please open an issue or contact the development team.
+
+---
+
+Built with ❤️ for the meal prep community

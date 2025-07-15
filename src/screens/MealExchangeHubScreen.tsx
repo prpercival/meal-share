@@ -8,10 +8,11 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContext } from '../context/AppContext';
-import { MealExchange, CookingSession } from '../types';
-import { mockExchanges, mockCookingSessions } from '../data/mockData';
+import { MealExchange, CookingSession, User, Recipe } from '../types';
+import { mockExchanges, mockCookingSessions, mockUsers, mockRecipes } from '../data/mockData';
 
 type ExchangeType = 'cook-trade' | 'cook-together';
 
@@ -24,6 +25,15 @@ export const MealExchangeHubScreen: React.FC = () => {
     setExchanges(mockExchanges);
     setCookingSessions(mockCookingSessions);
   }, [setExchanges, setCookingSessions]);
+
+  // Helper functions to get user and recipe data
+  const getUserById = (userId: string): User | undefined => {
+    return mockUsers.find(user => user.id === userId);
+  };
+
+  const getRecipeById = (recipeId: string): Recipe | undefined => {
+    return mockRecipes.find(recipe => recipe.id === recipeId);
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -172,6 +182,69 @@ export const MealExchangeHubScreen: React.FC = () => {
     listContainer: {
       paddingBottom: theme.spacing.lg,
     },
+    // User display styles
+    userInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.sm,
+    },
+    userAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      marginRight: theme.spacing.sm,
+    },
+    userName: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      fontWeight: '600',
+    },
+    userRole: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      marginLeft: theme.spacing.xs,
+    },
+    recipeTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.sm,
+    },
+    recipeTitle: {
+      ...theme.typography.body,
+      color: theme.colors.primary,
+      fontWeight: '600',
+      marginLeft: theme.spacing.sm,
+    },
+    participantsList: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
+    participantAvatars: {
+      flexDirection: 'row',
+      marginLeft: theme.spacing.sm,
+    },
+    participantAvatar: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      marginLeft: -8,
+      borderWidth: 2,
+      borderColor: theme.colors.surface,
+    },
+    hostBadge: {
+      backgroundColor: theme.colors.primary + '20',
+      paddingHorizontal: theme.spacing.xs,
+      paddingVertical: 2,
+      borderRadius: 8,
+      marginLeft: theme.spacing.xs,
+    },
+    hostBadgeText: {
+      ...theme.typography.caption,
+      color: theme.colors.primary,
+      fontSize: 10,
+      fontWeight: '600',
+    },
   });
 
   const getStatusColor = (status: string) => {
@@ -187,91 +260,183 @@ export const MealExchangeHubScreen: React.FC = () => {
     }
   };
 
-  const renderExchange = ({ item }: { item: MealExchange }) => (
-    <View style={styles.exchangeCard}>
-      <View style={styles.exchangeHeader}>
-        <Text style={styles.exchangeTitle}>Recipe Exchange</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+  const renderExchange = ({ item }: { item: MealExchange }) => {
+    const cook = getUserById(item.cookId);
+    const recipient = getUserById(item.recipientId);
+    const recipe = getRecipeById(item.recipeId);
+
+    return (
+      <View style={styles.exchangeCard}>
+        <View style={styles.exchangeHeader}>
+          <Text style={styles.exchangeTitle}>Recipe Exchange</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+          </View>
+        </View>
+
+        {/* Recipe Title */}
+        {recipe && (
+          <View style={styles.recipeTitleRow}>
+            <Ionicons name="restaurant-outline" size={16} color={theme.colors.primary} />
+            <Text style={styles.recipeTitle}>{recipe.title}</Text>
+          </View>
+        )}
+
+        {/* Cook Information */}
+        {cook && (
+          <View style={styles.userInfo}>
+            <Image source={cook.avatar} style={styles.userAvatar} />
+            <Text style={styles.userName}>{cook.name}</Text>
+            <Text style={styles.userRole}>(Cook)</Text>
+          </View>
+        )}
+
+        {/* Recipient Information */}
+        {recipient && (
+          <View style={styles.userInfo}>
+            <Image source={recipient.avatar} style={styles.userAvatar} />
+            <Text style={styles.userName}>{recipient.name}</Text>
+            <Text style={styles.userRole}>(Recipient)</Text>
+          </View>
+        )}
+
+        <View style={styles.exchangeDetails}>
+          <View style={styles.detailRow}>
+            <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>
+              {new Date(item.scheduledDate).toLocaleDateString()}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="people-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>{item.portionSize} portions</Text>
+          </View>
+          {item.pickupLocation && (
+            <View style={styles.detailRow}>
+              <Ionicons name="location-outline" size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.detailText}>{item.pickupLocation.address}</Text>
+            </View>
+          )}
+          {item.notes && (
+            <View style={styles.detailRow}>
+              <Ionicons name="chatbubble-outline" size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.detailText}>{item.notes}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
+            <Text style={[styles.buttonText, styles.secondaryButtonText]}>Message</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.primaryButton]}>
+            <Text style={[styles.buttonText, styles.primaryButtonText]}>
+              {item.status === 'pending' ? 'Confirm' : 'View Details'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
+    );
+  };
 
-      <View style={styles.exchangeDetails}>
-        <View style={styles.detailRow}>
-          <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>
-            {new Date(item.scheduledDate).toLocaleDateString()}
-          </Text>
+  const renderCookingSession = ({ item }: { item: CookingSession }) => {
+    const host = getUserById(item.hostId);
+    const recipe = getRecipeById(item.recipeId);
+    const participants = item.participants.map(id => getUserById(id)).filter(Boolean) as User[];
+
+    return (
+      <View style={styles.exchangeCard}>
+        <View style={styles.exchangeHeader}>
+          <Text style={styles.exchangeTitle}>Group Cooking</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+          </View>
         </View>
-        <View style={styles.detailRow}>
-          <Ionicons name="people-outline" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>{item.portionSize} portions</Text>
-        </View>
-        {item.pickupLocation && (
+
+        {/* Recipe Title */}
+        {recipe && (
+          <View style={styles.recipeTitleRow}>
+            <Ionicons name="restaurant-outline" size={16} color={theme.colors.primary} />
+            <Text style={styles.recipeTitle}>{recipe.title}</Text>
+          </View>
+        )}
+
+        {/* Host Information */}
+        {host && (
+          <View style={styles.userInfo}>
+            <Image source={host.avatar} style={styles.userAvatar} />
+            <Text style={styles.userName}>{host.name}</Text>
+            <View style={styles.hostBadge}>
+              <Text style={styles.hostBadgeText}>HOST</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Participants */}
+        {participants.length > 0 && (
+          <View style={styles.participantsList}>
+            <Ionicons name="people-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>Participants:</Text>
+            <View style={styles.participantAvatars}>
+              {participants.slice(0, 3).map((participant, index) => (
+                <Image 
+                  key={participant.id} 
+                  source={participant.avatar} 
+                  style={[styles.participantAvatar, { zIndex: participants.length - index }]} 
+                />
+              ))}
+              {participants.length > 3 && (
+                <View style={[styles.participantAvatar, { 
+                  backgroundColor: theme.colors.border, 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  zIndex: 0
+                }]}>
+                  <Text style={{ ...theme.typography.caption, fontSize: 10, color: theme.colors.text }}>
+                    +{participants.length - 3}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.exchangeDetails}>
+          <View style={styles.detailRow}>
+            <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>
+              {new Date(item.scheduledDate).toLocaleDateString()}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="people-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>
+              {item.participants.length}/{item.maxParticipants} participants
+            </Text>
+          </View>
           <View style={styles.detailRow}>
             <Ionicons name="location-outline" size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.detailText}>{item.pickupLocation.address}</Text>
+            <Text style={styles.detailText}>{item.location.address}</Text>
           </View>
-        )}
-        {item.notes && (
-          <View style={styles.detailRow}>
-            <Ionicons name="chatbubble-outline" size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.detailText}>{item.notes}</Text>
-          </View>
-        )}
-      </View>
+          {item.notes && (
+            <View style={styles.detailRow}>
+              <Ionicons name="chatbubble-outline" size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.detailText}>{item.notes}</Text>
+            </View>
+          )}
+        </View>
 
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
-          <Text style={[styles.buttonText, styles.secondaryButtonText]}>Message</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.primaryButton]}>
-          <Text style={[styles.buttonText, styles.primaryButtonText]}>
-            {item.status === 'pending' ? 'Confirm' : 'View Details'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderCookingSession = ({ item }: { item: CookingSession }) => (
-    <View style={styles.exchangeCard}>
-      <View style={styles.exchangeHeader}>
-        <Text style={styles.exchangeTitle}>Group Cooking</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
+            <Text style={[styles.buttonText, styles.secondaryButtonText]}>View Recipe</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.primaryButton]}>
+            <Text style={[styles.buttonText, styles.primaryButtonText]}>Join Session</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.exchangeDetails}>
-        <View style={styles.detailRow}>
-          <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>
-            {new Date(item.scheduledDate).toLocaleDateString()}
-          </Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Ionicons name="people-outline" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>
-            {item.participants.length}/{item.maxParticipants} participants
-          </Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Ionicons name="location-outline" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>{item.location.address}</Text>
-        </View>
-      </View>
-
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
-          <Text style={[styles.buttonText, styles.secondaryButtonText]}>View Recipe</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.primaryButton]}>
-          <Text style={[styles.buttonText, styles.primaryButtonText]}>Join Session</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
