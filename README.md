@@ -17,14 +17,16 @@ MealShare solves common meal prepping challenges by enabling community members t
 
 ### 🏠 Community Feed & Recipe Discovery
 - Browse weekly meal calendar from community members
-- Filter recipes by dietary preferences (vegetarian, gluten-free, etc.)
+- Auto-filter recipes by your dietary preferences (16+ options including vegetarian, gluten-free, keto)
 - Claim portions from available meals
 - Share and discover new recipes
 - View nutritional information and cooking difficulty
 
 ### 🔄 Meal Exchange Hub
 - Manage active meal exchanges with status tracking
-- Choose between "Cook & Trade" or "Cook Together" sessions
+- Create new meal exchanges with "Cook & Trade" or "Cook Together" sessions
+- Visual recipe selection with detailed ingredient lists and photos
+- Friend picker for direct exchanges and group coordination
 - Coordinate pickup/delivery logistics with interactive map
 - Organize group cooking events with RSVP functionality
 - Rate and review completed exchanges
@@ -37,15 +39,20 @@ MealShare solves common meal prepping challenges by enabling community members t
 - Manage personal recipe collection and pantry items
 
 ### 👥 Social Features
-- Connect with local meal prep community
-- View user profiles with cooking specialties and ratings
+- Search for and add new friends from the local meal prep community
+- Friend discovery with search by name, cooking specialties, or dietary preferences
+- Send and manage friend requests with confirmation workflow
+- View user profiles with cooking specialties (45+ cuisines) and ratings
 - Chat functionality for exchange coordination
 - Community announcements and meal prep tips
 
 ### ⚙️ Settings & Customization
-- Light/dark theme toggle
+- Light/dark theme toggle with system detection
+- Comprehensive dietary preference management (16+ options)
+- Cooking specialty selection (45+ cuisines from Italian to Korean BBQ)
+- Address autocomplete with real-time geocoding using Nominatim and Google Places APIs
+- Interactive maps for location selection and visualization
 - Notification preferences
-- Dietary restriction settings
 - Account and profile management
 
 ## 🛠️ Tech Stack
@@ -54,6 +61,8 @@ MealShare solves common meal prepping challenges by enabling community members t
 - **Language**: TypeScript
 - **Navigation**: React Navigation v7 with bottom tabs
 - **State Management**: React Context API
+- **Maps**: react-native-maps (native) and Leaflet (web)
+- **APIs**: Nominatim and Google Places for address autocomplete
 - **UI Components**: React Native Elements
 - **Icons**: Expo Vector Icons
 - **Image Handling**: expo-image for optimized loading
@@ -131,6 +140,11 @@ src/
 
 This is a fully functional prototype with:
 - ✅ Complete UI implementation for all core screens
+- ✅ Friend discovery and request system with search functionality
+- ✅ Meal exchange creation with recipe and friend selection
+- ✅ Real address autocomplete using Nominatim and Google Places APIs
+- ✅ Interactive maps with user location display
+- ✅ Centralized dietary preferences (16 options) and cooking specialties (45+ cuisines)
 - ✅ Mock data service with realistic sample content
 - ✅ Full navigation flow between all features
 - ✅ Responsive design for various screen sizes
@@ -140,7 +154,6 @@ This is a fully functional prototype with:
 ### Ready for:
 - Backend API integration
 - Real user authentication
-- GPS/Maps integration for pickup locations
 - Push notifications for exchange updates
 - Camera functionality for meal photo uploads
 - Real-time messaging between users
@@ -152,10 +165,6 @@ This is a fully functional prototype with:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📧 Contact
 
