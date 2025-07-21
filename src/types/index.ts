@@ -1,3 +1,5 @@
+import { DIETARY_PREFERENCES, COOKING_SPECIALTIES } from '../data/mockData';
+
 export interface User {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ export interface User {
     address: string;
   };
   dietaryPreferences: DietaryTag[];
-  cookingSpecialties: string[];
+  cookingSpecialties: CookingSpecialtyTag[];
   rating: number;
   totalExchanges: number;
   bio?: string;
@@ -49,15 +51,8 @@ export interface NutritionInfo {
   fiber: number;
 }
 
-export type DietaryTag = 
-  | 'vegetarian' 
-  | 'vegan' 
-  | 'gluten-free' 
-  | 'dairy-free' 
-  | 'low-carb' 
-  | 'keto' 
-  | 'paleo' 
-  | 'nut-free';
+export type DietaryTag = typeof DIETARY_PREFERENCES[number];
+export type CookingSpecialtyTag = typeof COOKING_SPECIALTIES[number];
 
 export * from './pantry';
 

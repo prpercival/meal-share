@@ -1540,7 +1540,7 @@ useFocusEffect(
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              Add {selectedMealType} for {new Date(selectedDateForMeal).toLocaleDateString()}
+              Add {selectedMealType} for {selectedDateForMeal ? new Date(selectedDateForMeal + 'T12:00:00').toLocaleDateString() : ''}
             </Text>
             <TouchableOpacity onPress={() => setShowAddMealModal(false)}>
               <Ionicons name="close" size={24} color={theme.colors.text} />

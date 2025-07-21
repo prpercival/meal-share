@@ -21,22 +21,16 @@ import {
   mockUsers, 
   getAvailableMealExchanges, 
   getSharedRecipes,
-  addRecipeToSchedule
+  addRecipeToSchedule,
+  DIETARY_PREFERENCES
 } from '../data/mockData';
 
-const dietaryFilters: DietaryTag[] = [
-  'vegetarian',
-  'vegan',
-  'gluten-free',
-  'dairy-free',
-  'low-carb',
-  'keto',
-];
+const dietaryFilters: DietaryTag[] = [...DIETARY_PREFERENCES];
 
 export const CommunityFeedScreen: React.FC = () => {
   const { theme } = useTheme();
   const { showSuccess, showError, showInfo } = useSnackbar();
-  const { recipes, setRecipes } = useAppContext();
+  const { recipes, setRecipes, currentUser } = useAppContext();
   const navigation = useNavigation();
   const [availableMeals, setAvailableMeals] = useState<AvailableMealExchange[]>([]);
   const [sharedRecipes, setSharedRecipes] = useState<SharedRecipe[]>([]);
@@ -49,6 +43,19 @@ export const CommunityFeedScreen: React.FC = () => {
     setAvailableMeals(getAvailableMealExchanges());
     setSharedRecipes(getSharedRecipes());
   }, [setRecipes]);
+
+  // Separate effect for updating filters when user preferences change
+  useEffect(() => {
+    // Auto-select user's dietary preferences as filters
+    if (currentUser?.dietaryPreferences) {
+      const userPreferences = currentUser.dietaryPreferences.filter(pref => 
+        dietaryFilters.includes(pref as DietaryTag)
+      );
+      setActiveFilters(userPreferences as DietaryTag[]);
+    } else {
+      setActiveFilters([]);
+    }
+  }, [currentUser?.dietaryPreferences]);
 
   const toggleFilter = (filter: DietaryTag) => {
     if (activeFilters.includes(filter)) {
@@ -123,7 +130,24 @@ export const CommunityFeedScreen: React.FC = () => {
 
     return (
       <View style={styles.filtersContainer}>
-        <Text style={styles.filtersTitle}>Dietary Filters</Text>
+        <View style={styles.filtersHeader}>
+          <Text style={styles.filtersTitle}>Dietary Filters</Text>
+          {activeFilters.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearFiltersButton}
+              onPress={() => setActiveFilters([])}
+            >
+              <Text style={styles.clearFiltersText}>Clear All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        {/* {currentUser?.dietaryPreferences && currentUser.dietaryPreferences.length > 0 && activeFilters.length === 0 && (
+          <Text style={styles.filtersSubtitle}>
+            💡 We've pre-selected your dietary preferences. Tap filters to customize.
+          </Text>
+        )} */}
+        
         <View style={filtersExpanded ? styles.filtersExpanded : styles.filtersCollapsed}>
           {/* Always show selected filters first */}
           {activeFilters.map(filter => (
@@ -133,20 +157,20 @@ export const CommunityFeedScreen: React.FC = () => {
               onPress={() => toggleFilter(filter)}
             >
               <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
-                {filter}
+                {filter.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </Text>
             </TouchableOpacity>
           ))}
           
           {/* If no active filters and not expanded, show first few unselected filters */}
-          {!filtersExpanded && activeFilters.length === 0 && unselectedFilters.slice(0, 3).map(filter => (
+          {!filtersExpanded && activeFilters.length === 0 && unselectedFilters.slice(0, 2).map(filter => (
             <TouchableOpacity
               key={filter}
               style={styles.filterChip}
               onPress={() => toggleFilter(filter)}
             >
               <Text style={styles.filterChipText}>
-                {filter}
+                {filter.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -159,7 +183,7 @@ export const CommunityFeedScreen: React.FC = () => {
               onPress={() => toggleFilter(filter)}
             >
               <Text style={styles.filterChipText}>
-                {filter}
+                {filter.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -172,7 +196,7 @@ export const CommunityFeedScreen: React.FC = () => {
             >
               <Text style={styles.showMoreButtonText}>
                 {activeFilters.length === 0 
-                  ? `+${unselectedFilters.length - 3} more`
+                  ? `+${unselectedFilters.length - 2} more`
                   : `+${unselectedFilters.length} more`
                 }
               </Text>
@@ -217,10 +241,34 @@ export const CommunityFeedScreen: React.FC = () => {
       paddingHorizontal: theme.spacing.md,
       marginBottom: theme.spacing.md,
     },
+    filtersHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.sm,
+    },
     filtersTitle: {
       ...theme.typography.h3,
       color: theme.colors.text,
+    },
+    filtersSubtitle: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
       marginBottom: theme.spacing.sm,
+      fontStyle: 'italic',
+    },
+    clearFiltersButton: {
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: 16,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    clearFiltersText: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
     },
     filtersRow: {
       flexDirection: 'row',
@@ -241,6 +289,7 @@ export const CommunityFeedScreen: React.FC = () => {
     filterChipText: {
       ...theme.typography.caption,
       color: theme.colors.primary,
+      textTransform: 'capitalize',
     },
     filterChipTextActive: {
       color: 'white',

@@ -1,13 +1,16 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Icon } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix default markers for React Leaflet
+delete (Icon.Default.prototype as any)._getIconUrl;
+Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface WebMapProps {
   locations: Array<{
@@ -18,10 +21,51 @@ interface WebMapProps {
     address: string;
     type?: 'user' | 'venue' | 'pickup';
   }>;
+  selectedLocationId?: string | null;
 }
 
-export const WebMapView: React.FC<WebMapProps> = ({ locations }) => {
-  const { theme } = useTheme();
+export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationId }) => {
+  const mapRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (selectedLocationId && mapRef.current) {
+      const selectedLocation = locations.find(loc => loc.id === selectedLocationId);
+      if (selectedLocation) {
+        mapRef.current.flyTo(
+          [selectedLocation.latitude, selectedLocation.longitude],
+          16,
+          { duration: 1 }
+        );
+      }
+    }
+  }, [selectedLocationId, locations]);
+  const getMapBounds = () => {
+    if (locations.length === 0) {
+      return [[40.7128, -74.0060], [40.7628, -73.9560]] as [[number, number], [number, number]];
+    }
+
+    if (locations.length === 1) {
+      const { latitude, longitude } = locations[0];
+      return [[latitude - 0.01, longitude - 0.01], [latitude + 0.01, longitude + 0.01]] as [[number, number], [number, number]];
+    }
+
+    const latitudes = locations.map(loc => loc.latitude);
+    const longitudes = locations.map(loc => loc.longitude);
+    
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+    
+    // Add some padding
+    const latPadding = (maxLat - minLat) * 0.1;
+    const lngPadding = (maxLng - minLng) * 0.1;
+    
+    return [
+      [minLat - latPadding, minLng - lngPadding],
+      [maxLat + latPadding, maxLng + lngPadding]
+    ] as [[number, number], [number, number]];
+  };
 
   const getMarkerColor = (type?: string) => {
     switch (type) {
@@ -36,100 +80,75 @@ export const WebMapView: React.FC<WebMapProps> = ({ locations }) => {
     }
   };
 
-  const openInMaps = (location: { latitude: number; longitude: number; name: string; address: string }) => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
-    Linking.openURL(url).catch(() => {
-      console.log('Failed to open maps');
+  const createCustomIcon = (color: string) => {
+    return new Icon({
+      iconUrl: `data:image/svg+xml;base64,${btoa(`
+        <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 12.5 12.5 28.5 12.5 28.5S25 25 25 12.5C25 5.596 19.404 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="2"/>
+          <circle cx="12.5" cy="12.5" r="5" fill="#fff"/>
+        </svg>
+      `)}`,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
     });
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    title: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginTop: 16,
-      marginBottom: 8,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      textAlign: 'center',
-      marginBottom: 20,
-      lineHeight: 20,
-    },
-    locationItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      marginVertical: 4,
-      backgroundColor: theme.colors.surface,
-      borderRadius: 8,
-      width: '100%',
-    },
-    locationInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-    },
-    locationText: {
-      marginLeft: 12,
-      flex: 1,
-    },
-    locationName: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: theme.colors.text,
-    },
-    locationAddress: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      marginTop: 2,
-    },
-    locationDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-  });
+  const mapBounds = getMapBounds();
 
   return (
     <View style={styles.container}>
-      <Ionicons name="map" size={64} color={theme.colors.primary} />
-      <Text style={styles.title}>Map View</Text>
-      <Text style={styles.subtitle}>
-        Maps are not available in web view. Tap on a location below to open in your default maps app.
-      </Text>
-      
-      {locations.map((location) => (
-        <TouchableOpacity
-          key={location.id}
-          style={styles.locationItem}
-          onPress={() => openInMaps(location)}
-        >
-          <View style={styles.locationInfo}>
-            <View
-              style={[
-                styles.locationDot,
-                { backgroundColor: getMarkerColor(location.type) },
-              ]}
-            />
-            <View style={styles.locationText}>
-              <Text style={styles.locationName}>{location.name}</Text>
-              <Text style={styles.locationAddress}>{location.address}</Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      ))}
+      <MapContainer
+        ref={mapRef}
+        bounds={mapBounds}
+        style={{ height: '100%', width: '100%' }}
+        scrollWheelZoom={true}
+        zoomControl={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {locations.map((location) => (
+          <Marker
+            key={location.id}
+            position={[location.latitude, location.longitude]}
+            icon={createCustomIcon(getMarkerColor(location.type))}
+          >
+            <Popup>
+              <div style={{ minWidth: '200px' }}>
+                <strong>{location.name}</strong>
+                <br />
+                <span style={{ color: '#666', fontSize: '14px' }}>
+                  {location.address}
+                </span>
+                <br />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: '#007bff', 
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    marginTop: '8px',
+                    display: 'inline-block'
+                  }}
+                >
+                  Open in Google Maps →
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+});
