@@ -389,6 +389,11 @@ export const mockExchanges: MealExchange[] = [
     status: 'pending',
     exchangeType: 'cook-trade',
     portionSize: 2,
+    pickupLocation: {
+      latitude: 40.7589,
+      longitude: -73.9851,
+      address: '123 Community Way, New York, NY',
+    },
     notes: 'Looking forward to trying this healthy recipe!',
   },
   {
@@ -400,6 +405,11 @@ export const mockExchanges: MealExchange[] = [
     status: 'confirmed',
     exchangeType: 'cook-trade',
     portionSize: 1,
+    pickupLocation: {
+      latitude: 40.7505,
+      longitude: -73.9934,
+      address: '789 Library Ave, New York, NY',
+    },
     notes: 'Can you make it extra spicy?',
   },
   {
@@ -411,6 +421,11 @@ export const mockExchanges: MealExchange[] = [
     status: 'completed',
     exchangeType: 'cook-trade',
     portionSize: 3,
+    pickupLocation: {
+      latitude: 40.7829,
+      longitude: -73.9654,
+      address: 'Central Park, New York, NY',
+    },
     notes: 'Perfect for a cozy dinner!',
     rating: 5,
     review: 'Amazing carbonara! Will definitely request again.',

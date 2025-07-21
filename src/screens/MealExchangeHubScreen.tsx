@@ -18,6 +18,7 @@ import { useSnackbar } from '../context/SnackbarContext';
 import { useAppContext } from '../context/AppContext';
 import { MealExchange, CookingSession, User, Recipe } from '../types';
 import { RecipeScalingCalculator } from '../components/RecipeScalingCalculator';
+import { LocationMap } from '../components/LocationMap';
 import { 
   mockExchanges, 
   mockCookingSessions, 
@@ -145,24 +146,79 @@ export const MealExchangeHubScreen: React.FC = () => {
   };
 
   const handleViewPickupLocations = () => {
-    // Mock pickup locations and venues for demo
-    const locations = [
-      "Community Center - 123 Main St",
-      "City Park Pavilion - 456 Oak Ave", 
-      "Local Library - 789 Pine Rd",
-      "Farmer's Market - 321 Elm St",
-      "Coffee Shop Central - 654 Maple Dr"
-    ];
+    setShowLocationMap(true);
+  };
 
-    showInfo(
-      `Popular exchange locations in your area:\n\n${locations.map((loc, idx) => `${idx + 1}. ${loc}`).join('\n')}\n\nTap on any exchange to see its specific pickup location.`,
-      {
-        label: 'Open Map',
-        onPress: () => {
-          showInfo('Map functionality coming soon!');
-        }
+  const getPickupLocations = () => {
+    // Get pickup locations from exchanges and cooking sessions
+    const locations: Array<{
+      id: string;
+      name: string;
+      latitude: number;
+      longitude: number;
+      address: string;
+      type: 'pickup' | 'venue';
+    }> = [];
+
+    // Add pickup locations from exchanges
+    exchanges.forEach(exchange => {
+      if (exchange.pickupLocation) {
+        const recipe = getRecipeById(exchange.recipeId);
+        locations.push({
+          id: `exchange-${exchange.id}`,
+          name: recipe ? `${recipe.title} Exchange` : 'Recipe Exchange',
+          latitude: exchange.pickupLocation.latitude,
+          longitude: exchange.pickupLocation.longitude,
+          address: exchange.pickupLocation.address,
+          type: 'pickup',
+        });
       }
-    );
+    });
+
+    // Add locations from cooking sessions
+    cookingSessions.forEach(session => {
+      locations.push({
+        id: `session-${session.id}`,
+        name: `Cooking Session`,
+        latitude: session.location.latitude,
+        longitude: session.location.longitude,
+        address: session.location.address,
+        type: 'venue',
+      });
+    });
+
+    // Add some popular venues if we don't have enough locations
+    if (locations.length < 3) {
+      const popularVenues = [
+        {
+          id: 'venue-1',
+          name: 'Community Center',
+          latitude: 40.7589,
+          longitude: -73.9851,
+          address: '123 Community Way, New York, NY',
+          type: 'venue' as const,
+        },
+        {
+          id: 'venue-2', 
+          name: 'Central Park Pavilion',
+          latitude: 40.7829,
+          longitude: -73.9654,
+          address: 'Central Park, New York, NY',
+          type: 'venue' as const,
+        },
+        {
+          id: 'venue-3',
+          name: 'Local Library',
+          latitude: 40.7505,
+          longitude: -73.9934,
+          address: '789 Library Ave, New York, NY',
+          type: 'venue' as const,
+        },
+      ];
+      locations.push(...popularVenues.slice(0, 3 - locations.length));
+    }
+
+    return locations;
   };
 
   const handleCreateExchange = () => {
@@ -233,6 +289,7 @@ export const MealExchangeHubScreen: React.FC = () => {
   const [showFriendPicker, setShowFriendPicker] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [selectedRecipeForViewing, setSelectedRecipeForViewing] = useState<Recipe | null>(null);
+  const [showLocationMap, setShowLocationMap] = useState(false);
 
   const RecipePicker = ({ onSelect, onClose }: { onSelect: (recipe: Recipe) => void; onClose: () => void }) => (
     <Modal visible={true} animationType="slide" presentationStyle="pageSheet">
@@ -1046,6 +1103,14 @@ export const MealExchangeHubScreen: React.FC = () => {
           onScale={handleRecipeScale}
         />
       )}
+
+      {/* Location Map */}
+      <LocationMap
+        visible={showLocationMap}
+        onClose={() => setShowLocationMap(false)}
+        locations={getPickupLocations()}
+        title="Pickup Locations & Venues"
+      />
     </View>
   );
 };

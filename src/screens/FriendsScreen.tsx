@@ -17,6 +17,7 @@ import { useSnackbar } from '../context/SnackbarContext';
 import { useAppContext } from '../context/AppContext';
 import { User } from '../types';
 import { UserProfileModal } from '../components/UserProfileModal';
+import { LocationMap } from '../components/LocationMap';
 import { 
   mockUsers, 
   currentUser, 
@@ -38,6 +39,7 @@ export const FriendsScreen: React.FC = () => {
   const [filteredPotentialFriends, setFilteredPotentialFriends] = useState<User[]>([]);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [mapVisible, setMapVisible] = useState(false);
 
   useEffect(() => {
     // Load current user's friends
@@ -143,6 +145,27 @@ export const FriendsScreen: React.FC = () => {
       ...theme.typography.body,
       color: theme.colors.textSecondary,
       marginBottom: theme.spacing.md,
+    },
+    headerButtons: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginBottom: theme.spacing.sm,
+    },
+    mapButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+    },
+    mapButtonText: {
+      color: theme.colors.primary,
+      fontSize: 14,
+      fontWeight: '500',
+      marginLeft: 4,
     },
     searchContainer: {
       flexDirection: 'row',
@@ -462,6 +485,16 @@ export const FriendsScreen: React.FC = () => {
           Connect with your cooking community
         </Text>
 
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => setMapVisible(true)}
+          >
+            <Ionicons name="map-outline" size={20} color={theme.colors.primary} />
+            <Text style={styles.mapButtonText}>Map View</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.searchContainer}>
           <Ionicons 
             name="search" 
@@ -564,6 +597,30 @@ export const FriendsScreen: React.FC = () => {
           user={selectedUser}
         />
       )}
+
+      <LocationMap
+        visible={mapVisible}
+        onClose={() => setMapVisible(false)}
+        locations={[
+          ...friends.map(friend => ({
+            id: friend.id,
+            name: friend.name,
+            latitude: friend.location.latitude,
+            longitude: friend.location.longitude,
+            address: friend.location.address,
+            type: 'user' as const,
+          })),
+          ...potentialFriends.slice(0, 5).map(user => ({
+            id: user.id,
+            name: user.name,
+            latitude: user.location.latitude,
+            longitude: user.location.longitude,
+            address: user.location.address,
+            type: 'user' as const,
+          })),
+        ]}
+        title="Friends & Nearby Users"
+      />
     </View>
   );
 };

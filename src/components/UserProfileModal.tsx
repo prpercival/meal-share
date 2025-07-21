@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { User } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { LocationMap } from './LocationMap';
 
 interface UserProfileModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
 }) => {
   const { theme } = useTheme();
+  const [showMap, setShowMap] = useState(false);
 
   const formatJoinedDate = (dateString?: string) => {
     if (!dateString) return 'Unknown';
@@ -47,7 +49,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       borderRadius: 20,
       padding: 20,
       width: '100%',
-      maxHeight: '80%',
+      maxHeight: '85%',
+      minHeight: 400,
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
@@ -105,7 +108,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     location: {
       fontSize: 14,
       color: theme.colors.textSecondary,
+      marginLeft: 4,
+    },
+    locationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
       marginBottom: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      backgroundColor: theme.colors.background,
     },
     rating: {
       flexDirection: 'row',
@@ -123,7 +135,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       color: theme.colors.textSecondary,
     },
     content: {
-      flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
     },
     section: {
       marginBottom: 20,
@@ -160,13 +173,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     specialtiesContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 8,
+      marginHorizontal: -4, // Compensate for item margins
     },
     specialtyTag: {
       backgroundColor: theme.colors.primary,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
+      margin: 4,
     },
     specialtyText: {
       color: 'white',
@@ -176,13 +190,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     dietaryContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 8,
+      marginHorizontal: -4, // Compensate for item margins
     },
     dietaryTag: {
       backgroundColor: theme.colors.secondary,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
+      margin: 4,
     },
     dietaryText: {
       color: 'white',
@@ -217,14 +232,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.content} 
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+          >
             <View style={styles.profileSection}>
               <Image 
                 source={typeof user.avatar === 'string' ? { uri: user.avatar } : user.avatar}
                 style={styles.avatar} 
               />
               <Text style={styles.name}>{user.name}</Text>
-              <Text style={styles.location}>{user.location.address}</Text>
+              
+              <TouchableOpacity 
+                style={styles.locationContainer}
+                onPress={() => setShowMap(true)}
+              >
+                <Ionicons name="location-outline" size={16} color={theme.colors.primary} />
+                <Text style={styles.location}>{user.location.address}</Text>
+              </TouchableOpacity>
               
               <View style={styles.rating}>
                 <Ionicons name="star" size={18} color="#FFD700" />
@@ -293,6 +320,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </ScrollView>
         </View>
       </View>
+
+      <LocationMap
+        visible={showMap}
+        onClose={() => setShowMap(false)}
+        locations={[
+          {
+            id: user.id,
+            name: user.name,
+            latitude: user.location.latitude,
+            longitude: user.location.longitude,
+            address: user.location.address,
+            type: 'user',
+          },
+        ]}
+        title={`${user.name}'s Location`}
+      />
     </Modal>
   );
 };
