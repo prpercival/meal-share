@@ -239,7 +239,7 @@ export const CommunityFeedScreen: React.FC = () => {
     },
     filtersContainer: {
       paddingHorizontal: theme.spacing.md,
-      marginBottom: theme.spacing.md,
+      //marginBottom: theme.spacing.md,
     },
     filtersHeader: {
       flexDirection: 'row',

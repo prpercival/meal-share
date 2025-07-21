@@ -41,6 +41,8 @@ export const SettingsScreen: React.FC = () => {
   );
   const [dietarySearchQuery, setDietarySearchQuery] = useState('');
   const [cookingSearchQuery, setCookingSearchQuery] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState<Array<{address: string, lat: number, lon: number}>>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
   // Use centralized dietary preferences list with search filtering
   const availableDietaryOptions = DIETARY_PREFERENCES.filter(option =>
@@ -54,6 +56,167 @@ export const SettingsScreen: React.FC = () => {
     option.split('-').some(word => word.toLowerCase().includes(cookingSearchQuery.toLowerCase()))
   );
 
+  const handleAddressChange = async (address: string) => {
+    setTempLocation(prev => ({ ...prev, address }));
+    
+    // Show suggestions for addresses with at least 3 characters
+    if (address.length >= 3) {
+      try {
+        const suggestions = await getAddressSuggestions(address);
+        setAddressSuggestions(suggestions);
+        setShowAddressSuggestions(suggestions.length > 0);
+      } catch (error) {
+        console.log('Error getting address suggestions:', error);
+        setShowAddressSuggestions(false);
+        setAddressSuggestions([]);
+      }
+    } else {
+      setShowAddressSuggestions(false);
+      setAddressSuggestions([]);
+    }
+  };
+
+  const getAddressSuggestions = async (input: string): Promise<Array<{address: string, lat: number, lon: number}>> => {
+    try {
+      // Using Nominatim (OpenStreetMap) - completely free, no API key needed
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `q=${encodeURIComponent(input)}` +
+        `&format=json` +
+        `&addressdetails=1` +
+        `&limit=5` +
+        `&countrycodes=us,ca,gb,au` + // Limit to major English-speaking countries
+        `&accept-language=en`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        return data.map((item: any) => ({
+          address: item.display_name,
+          lat: parseFloat(item.lat),
+          lon: parseFloat(item.lon)
+        }));
+      } else {
+        // If no results, try Google Places API as fallback (if API key available)
+        return await getGooglePlacesSuggestions(input);
+      }
+    } catch (error) {
+      console.log('Nominatim API error, trying Google Places fallback:', error);
+      // Fallback to Google Places API
+      return await getGooglePlacesSuggestions(input);
+    }
+  };
+
+  const getGooglePlacesSuggestions = async (input: string): Promise<Array<{address: string, lat: number, lon: number}>> => {
+    try {
+      const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+      
+      if (!GOOGLE_PLACES_API_KEY || GOOGLE_PLACES_API_KEY === 'YOUR_API_KEY_HERE') {
+        // No Google API key available
+        console.log('No Google Places API key found, no suggestions available');
+        return [];
+      }
+      
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
+        `input=${encodeURIComponent(input)}` +
+        `&types=address` +
+        `&key=${GOOGLE_PLACES_API_KEY}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.predictions) {
+        // For Google Places, we need to get coordinates separately using Place Details API
+        const suggestionsWithCoords = await Promise.all(
+          data.predictions.slice(0, 5).map(async (prediction: any) => {
+            try {
+              const detailsResponse = await fetch(
+                `https://maps.googleapis.com/maps/api/place/details/json?` +
+                `place_id=${prediction.place_id}` +
+                `&fields=geometry` +
+                `&key=${GOOGLE_PLACES_API_KEY}`
+              );
+              
+              if (detailsResponse.ok) {
+                const details = await detailsResponse.json();
+                if (details.result?.geometry?.location) {
+                  return {
+                    address: prediction.description,
+                    lat: details.result.geometry.location.lat,
+                    lon: details.result.geometry.location.lng
+                  };
+                }
+              }
+            } catch (error) {
+              console.log('Error fetching place details:', error);
+            }
+            
+            // Fallback if coordinates can't be fetched
+            return {
+              address: prediction.description,
+              lat: 0,
+              lon: 0
+            };
+          })
+        );
+        
+        return suggestionsWithCoords;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.log('Google Places API error:', error);
+      return [];
+    }
+  };
+
+  const selectAddressSuggestion = async (selectedSuggestion: {address: string, lat: number, lon: number}) => {
+    setTempLocation(prev => ({
+      ...prev,
+      address: selectedSuggestion.address,
+      latitude: selectedSuggestion.lat,
+      longitude: selectedSuggestion.lon
+    }));
+    setShowAddressSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
+  const manualGeocodeAddress = async () => {
+    if (!tempLocation.address.trim()) {
+      Alert.alert('Error', 'Please enter an address first');
+      return;
+    }
+
+    try {
+      const suggestions = await getAddressSuggestions(tempLocation.address);
+      if (suggestions.length > 0) {
+        // Use the first (best) match
+        const bestMatch = suggestions[0];
+        setTempLocation(prev => ({
+          ...prev,
+          latitude: bestMatch.lat,
+          longitude: bestMatch.lon
+        }));
+        Alert.alert('Success', 'Coordinates updated from address!');
+      } else {
+        Alert.alert('No Results', 'Could not find coordinates for this address. Please check the address or try a different one.');
+      }
+    } catch (error) {
+      console.error('Manual geocoding failed:', error);
+      Alert.alert('Error', 'Failed to get coordinates. Please try again.');
+    }
+  };
+
   const handleUpdateLocation = async () => {
     if (!tempLocation.address.trim()) {
       Alert.alert('Error', 'Please enter a valid address');
@@ -61,29 +224,34 @@ export const SettingsScreen: React.FC = () => {
     }
     
     try {
-      // Try to geocode the address if lat/lng are not provided or are default values
+      let finalLocation = { ...tempLocation };
+      
+      // If coordinates are still 0, try to get them from the address
       if (tempLocation.latitude === 0 || tempLocation.longitude === 0) {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          try {
-            const geocoded = await Location.geocodeAsync(tempLocation.address);
-            if (geocoded.length > 0) {
-              tempLocation.latitude = geocoded[0].latitude;
-              tempLocation.longitude = geocoded[0].longitude;
-            }
-          } catch (geocodeError) {
-            console.log('Geocoding failed, using provided coordinates:', geocodeError);
-            // If geocoding fails, we'll use the manually entered coordinates
+        try {
+          const suggestions = await getAddressSuggestions(tempLocation.address);
+          if (suggestions.length > 0) {
+            const bestMatch = suggestions[0];
+            finalLocation = {
+              ...finalLocation,
+              latitude: bestMatch.lat,
+              longitude: bestMatch.lon,
+            };
+            // Update the temp state to show the new coordinates
+            setTempLocation(finalLocation);
           }
+        } catch (geocodeError) {
+          console.log('Address lookup failed, using provided coordinates:', geocodeError);
+          // If lookup fails, we'll use the manually entered coordinates
         }
       }
       
       // Update the current user in mockData (in-memory)
       if (currentUser) {
         currentUser.location = {
-          address: tempLocation.address,
-          latitude: tempLocation.latitude,
-          longitude: tempLocation.longitude,
+          address: finalLocation.address,
+          latitude: finalLocation.latitude,
+          longitude: finalLocation.longitude,
         };
       }
       
@@ -392,6 +560,33 @@ export const SettingsScreen: React.FC = () => {
       marginTop: theme.spacing.lg,
       fontStyle: 'italic',
     },
+    addressSuggestionsContainer: {
+      maxHeight: 200,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderTopWidth: 0,
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
+      marginTop: -8, // Connect to the input field
+      zIndex: 1000,
+    },
+    addressSuggestion: {
+      padding: theme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    addressSuggestionLast: {
+      borderBottomWidth: 0,
+    },
+    addressSuggestionText: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    addressInputContainer: {
+      position: 'relative',
+      zIndex: 1001,
+    },
   });
 
   const settingSections = [
@@ -639,16 +834,48 @@ export const SettingsScreen: React.FC = () => {
           <ScrollView style={styles.modalContent}>
             <View style={styles.formSection}>
               <Text style={styles.formLabel}>Address *</Text>
-              <TextInput
-                style={styles.textInput}
-                value={tempLocation.address}
-                onChangeText={(text) => setTempLocation(prev => ({ ...prev, address: text }))}
-                placeholder="Enter your full address (e.g., 123 Main St, New York, NY 10001)"
-                placeholderTextColor={theme.colors.textSecondary}
-                multiline
-              />
+              <View style={styles.addressInputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  value={tempLocation.address}
+                  onChangeText={handleAddressChange}
+                  onBlur={() => {
+                    // Hide suggestions when input loses focus (with small delay)
+                    setTimeout(() => setShowAddressSuggestions(false), 150);
+                  }}
+                  onFocus={() => {
+                    // Show suggestions if we have them when input gains focus
+                    if (addressSuggestions.length > 0) {
+                      setShowAddressSuggestions(true);
+                    }
+                  }}
+                  placeholder="Enter your full address (e.g., 123 Main St, New York, NY 10001)"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  multiline
+                />
+                {showAddressSuggestions && addressSuggestions.length > 0 && (
+                  <ScrollView 
+                    style={styles.addressSuggestionsContainer}
+                    keyboardShouldPersistTaps="handled"
+                    nestedScrollEnabled
+                  >
+                    {addressSuggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.addressSuggestion,
+                          index === addressSuggestions.length - 1 && styles.addressSuggestionLast
+                        ]}
+                        onPress={() => selectAddressSuggestion(suggestion)}
+                      >
+                        <Text style={styles.addressSuggestionText}>{suggestion.address}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
               <Text style={styles.helperText}>
-                💡 Enter your full address. We'll automatically find the coordinates for you!
+                💡 Start typing your address to see real suggestions from OpenStreetMap (free) or Google Places API. Coordinates will auto-fill when you select an address!
               </Text>
             </View>
 
@@ -676,6 +903,18 @@ export const SettingsScreen: React.FC = () => {
                 keyboardType="numeric"
                 editable={true}
               />
+            </View>
+
+            {/* Manual Geocode Button */}
+            <View style={styles.formSection}>
+              <TouchableOpacity 
+                style={[styles.updateButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border }]} 
+                onPress={manualGeocodeAddress}
+              >
+                <Text style={[styles.updateButtonText, { color: theme.colors.primary }]}>
+                  📍 Get Coordinates from Address
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.updateButton} onPress={handleUpdateLocation}>

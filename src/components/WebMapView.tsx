@@ -22,9 +22,13 @@ interface WebMapProps {
     type?: 'user' | 'venue' | 'pickup';
   }>;
   selectedLocationId?: string | null;
+  userLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
-export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationId }) => {
+export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationId, userLocation }) => {
   const mapRef = useRef<any>(null);
 
   useEffect(() => {
@@ -40,17 +44,27 @@ export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationI
     }
   }, [selectedLocationId, locations]);
   const getMapBounds = () => {
-    if (locations.length === 0) {
+    // Include user location in bounds calculation if available
+    const allLocations = userLocation ? [...locations, {
+      id: 'user-current',
+      name: 'Your Location',
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      address: 'Current Location',
+      type: 'current-user' as const
+    }] : locations;
+
+    if (allLocations.length === 0) {
       return [[40.7128, -74.0060], [40.7628, -73.9560]] as [[number, number], [number, number]];
     }
 
-    if (locations.length === 1) {
-      const { latitude, longitude } = locations[0];
+    if (allLocations.length === 1) {
+      const { latitude, longitude } = allLocations[0];
       return [[latitude - 0.01, longitude - 0.01], [latitude + 0.01, longitude + 0.01]] as [[number, number], [number, number]];
     }
 
-    const latitudes = locations.map(loc => loc.latitude);
-    const longitudes = locations.map(loc => loc.longitude);
+    const latitudes = allLocations.map(loc => loc.latitude);
+    const longitudes = allLocations.map(loc => loc.longitude);
     
     const minLat = Math.min(...latitudes);
     const maxLat = Math.max(...latitudes);
@@ -69,6 +83,8 @@ export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationI
 
   const getMarkerColor = (type?: string) => {
     switch (type) {
+      case 'current-user':
+        return '#2196F3'; // Blue for current user location
       case 'user':
         return '#34c3eb';
       case 'venue':
@@ -80,14 +96,20 @@ export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationI
     }
   };
 
-  const createCustomIcon = (color: string) => {
-    return new Icon({
-      iconUrl: `data:image/svg+xml;base64,${btoa(`
-        <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+  const createCustomIcon = (color: string, isCurrentUser: boolean = false) => {
+    const iconSvg = isCurrentUser 
+      ? `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 12.5 12.5 28.5 12.5 28.5S25 25 25 12.5C25 5.596 19.404 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="2"/>
+          <circle cx="12.5" cy="12.5" r="6" fill="#fff"/>
+          <circle cx="12.5" cy="12.5" r="3" fill="${color}"/>
+        </svg>`
+      : `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
           <path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 12.5 12.5 28.5 12.5 28.5S25 25 25 12.5C25 5.596 19.404 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="2"/>
           <circle cx="12.5" cy="12.5" r="5" fill="#fff"/>
-        </svg>
-      `)}`,
+        </svg>`;
+
+    return new Icon({
+      iconUrl: `data:image/svg+xml;base64,${btoa(iconSvg)}`,
       iconSize: [25, 41],
       iconAnchor: [12, 41],
       popupAnchor: [1, -34],
@@ -113,7 +135,7 @@ export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationI
           <Marker
             key={location.id}
             position={[location.latitude, location.longitude]}
-            icon={createCustomIcon(getMarkerColor(location.type))}
+            icon={createCustomIcon(getMarkerColor(location.type), false)}
           >
             <Popup>
               <div style={{ minWidth: '200px' }}>
@@ -141,6 +163,39 @@ export const WebMapView: React.FC<WebMapProps> = ({ locations, selectedLocationI
             </Popup>
           </Marker>
         ))}
+        
+        {/* Current User Location Marker */}
+        {userLocation && (
+          <Marker
+            position={[userLocation.latitude, userLocation.longitude]}
+            icon={createCustomIcon(getMarkerColor('current-user'), true)}
+          >
+            <Popup>
+              <div style={{ minWidth: '200px' }}>
+                <strong>📍 Your Current Location</strong>
+                <br />
+                <span style={{ color: '#666', fontSize: '14px' }}>
+                  This is where you are right now
+                </span>
+                <br />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${userLocation.latitude},${userLocation.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: '#007bff', 
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    marginTop: '8px',
+                    display: 'inline-block'
+                  }}
+                >
+                  Open in Google Maps →
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        )}
       </MapContainer>
     </View>
   );

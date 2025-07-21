@@ -21,12 +21,16 @@ interface NativeMapProps {
     type?: 'user' | 'venue' | 'pickup';
   }>;
   selectedLocationId?: string | null;
+  userLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
-export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLocationId }) => {
+export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLocationId, userLocation }) => {
   const { theme } = useTheme();
   const mapRef = useRef<MapView>(null);
-  const [userLocation, setUserLocation] = useState<{
+  const [currentUserLocation, setCurrentUserLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -57,7 +61,7 @@ export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLoc
       
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
-        setUserLocation({
+        setCurrentUserLocation({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         });
@@ -73,7 +77,17 @@ export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLoc
   };
 
   const getRegion = () => {
-    if (locations.length === 0) {
+    // Include user location in bounds calculation if available
+    const allLocations = userLocation ? [...locations, {
+      id: 'user-current',
+      name: 'Your Location',
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      address: 'Current Location',
+      type: 'current-user' as const
+    }] : locations;
+
+    if (allLocations.length === 0) {
       return {
         latitude: 40.7128,
         longitude: -74.0060,
@@ -82,8 +96,8 @@ export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLoc
       };
     }
 
-    const latitudes = locations.map(loc => loc.latitude);
-    const longitudes = locations.map(loc => loc.longitude);
+    const latitudes = allLocations.map(loc => loc.latitude);
+    const longitudes = allLocations.map(loc => loc.longitude);
     
     const minLat = Math.min(...latitudes);
     const maxLat = Math.max(...latitudes);
@@ -105,6 +119,8 @@ export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLoc
 
   const getMarkerColor = (type?: string) => {
     switch (type) {
+      case 'current-user':
+        return '#2196F3'; // Blue for current user location
       case 'user':
         return '#34c3eb';
       case 'venue':
@@ -124,7 +140,7 @@ export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLoc
 
     try {
       const location = await Location.getCurrentPositionAsync({});
-      setUserLocation({
+      setCurrentUserLocation({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
@@ -183,6 +199,19 @@ export const NativeMapView: React.FC<NativeMapProps> = ({ locations, selectedLoc
             pinColor={getMarkerColor(location.type)}
           />
         ))}
+        
+        {/* Current User Location Marker */}
+        {userLocation && (
+          <Marker
+            coordinate={{
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            }}
+            title="📍 Your Current Location"
+            description="This is where you are right now"
+            pinColor={getMarkerColor('current-user')}
+          />
+        )}
       </MapView>
 
       {hasLocationPermission && (
