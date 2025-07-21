@@ -6,14 +6,17 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { useAppContext } from '../context/AppContext';
 
 export const SettingsScreen: React.FC = () => {
   const { theme, isDark, toggleTheme } = useTheme();
+  const { showSuccess, showInfo } = useSnackbar();
   const { currentUser } = useAppContext();
 
   const styles = StyleSheet.create({
@@ -141,7 +144,10 @@ export const SettingsScreen: React.FC = () => {
           description: 'Toggle between light and dark themes',
           action: 'toggle',
           value: isDark,
-          onPress: toggleTheme,
+          onPress: () => {
+            toggleTheme();
+            showSuccess(`Switched to ${isDark ? 'light' : 'dark'} mode`);
+          },
         },
       ],
     },
@@ -174,21 +180,38 @@ export const SettingsScreen: React.FC = () => {
           title: 'Edit Profile',
           description: 'Update your personal information',
           action: 'navigate',
-          onPress: () => {},
+          onPress: () => {
+            showInfo('Edit Profile functionality coming soon!');
+          },
         },
         {
           icon: 'location-outline',
           title: 'Location Settings',
           description: 'Manage your pickup and delivery preferences',
           action: 'navigate',
-          onPress: () => {},
+          onPress: () => {
+            Alert.alert(
+              'Location Settings',
+              'Update your default pickup location and delivery radius preferences.',
+              [{ text: 'OK' }]
+            );
+          },
         },
         {
           icon: 'nutrition-outline',
           title: 'Dietary Preferences',
           description: 'Update your dietary restrictions and preferences',
           action: 'navigate',
-          onPress: () => {},
+          onPress: () => {
+            Alert.alert(
+              'Dietary Preferences',
+              'Current preferences: Vegetarian, Gluten-free\n\nUpdate your dietary restrictions and preferences to get better meal recommendations.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Update Preferences', onPress: () => {} }
+              ]
+            );
+          },
         },
       ],
     },
@@ -200,21 +223,36 @@ export const SettingsScreen: React.FC = () => {
           title: 'Help & FAQ',
           description: 'Get answers to common questions',
           action: 'navigate',
-          onPress: () => {},
+          onPress: () => {
+            showInfo('Help & FAQ functionality coming soon!');
+          },
         },
         {
           icon: 'chatbubble-outline',
           title: 'Contact Support',
           description: 'Get help from our support team',
           action: 'navigate',
-          onPress: () => {},
+          onPress: () => {
+            console.log('Contact Support button pressed'); // Debug log
+            Alert.alert(
+              'Contact Support',
+              'Need help? Contact our support team:\n\nEmail: support@mealshare.com\nPhone: (555) 123-4567\n\nWe typically respond within 24 hours.',
+              [{ text: 'OK' }]
+            );
+          },
         },
         {
           icon: 'document-text-outline',
           title: 'Privacy Policy',
           description: 'Review our privacy policy',
           action: 'navigate',
-          onPress: () => {},
+          onPress: () => {
+            Alert.alert(
+              'Privacy Policy',
+              'Your privacy is important to us. We collect minimal data necessary to provide our service and never share your personal information with third parties.\n\nFor the full privacy policy, visit our website.',
+              [{ text: 'OK' }]
+            );
+          },
         },
       ],
     },
@@ -276,7 +314,13 @@ export const SettingsScreen: React.FC = () => {
                   itemIndex === 0 && styles.settingItemFirst,
                   itemIndex === section.items.length - 1 && styles.settingItemLast,
                 ]}
-                onPress={item.onPress}
+                onPress={() => {
+                  console.log('TouchableOpacity pressed for:', item.title, 'Action:', item.action);
+                  if (item.action === 'navigate') {
+                    item.onPress();
+                  }
+                }}
+                disabled={item.action === 'toggle'}
               >
                 <View style={styles.settingLeft}>
                   <Ionicons

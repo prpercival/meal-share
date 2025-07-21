@@ -6,14 +6,23 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { useAppContext } from '../context/AppContext';
-import { RecipeCard } from '../components/RecipeCard';
-import { Recipe, DietaryTag } from '../types';
-import { mockRecipes } from '../data/mockData';
+import { AvailableMealCard } from '../components/AvailableMealCard';
+import { SharedRecipeCard } from '../components/SharedRecipeCard';
+import { Recipe, DietaryTag, User, AvailableMealExchange, SharedRecipe } from '../types';
+import { 
+  mockRecipes, 
+  mockUsers, 
+  getAvailableMealExchanges, 
+  getSharedRecipes,
+  addRecipeToSchedule
+} from '../data/mockData';
 
 const dietaryFilters: DietaryTag[] = [
   'vegetarian',
@@ -26,27 +35,20 @@ const dietaryFilters: DietaryTag[] = [
 
 export const CommunityFeedScreen: React.FC = () => {
   const { theme } = useTheme();
+  const { showSuccess, showError, showInfo } = useSnackbar();
   const { recipes, setRecipes } = useAppContext();
   const navigation = useNavigation();
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
+  const [availableMeals, setAvailableMeals] = useState<AvailableMealExchange[]>([]);
+  const [sharedRecipes, setSharedRecipes] = useState<SharedRecipe[]>([]);
   const [activeFilters, setActiveFilters] = useState<DietaryTag[]>([]);
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     // Load mock data
     setRecipes(mockRecipes);
+    setAvailableMeals(getAvailableMealExchanges());
+    setSharedRecipes(getSharedRecipes());
   }, [setRecipes]);
-
-  useEffect(() => {
-    if (activeFilters.length === 0) {
-      setFilteredRecipes(recipes);
-    } else {
-      const filtered = recipes.filter(recipe =>
-        activeFilters.some(filter => recipe.dietaryTags.includes(filter))
-      );
-      setFilteredRecipes(filtered);
-    }
-  }, [recipes, activeFilters]);
 
   const toggleFilter = (filter: DietaryTag) => {
     if (activeFilters.includes(filter)) {
@@ -56,15 +58,60 @@ export const CommunityFeedScreen: React.FC = () => {
     }
   };
 
-  const handleClaimPortion = (recipeId: string) => {
-    // Handle claiming a portion
-    console.log('Claiming portion for recipe:', recipeId);
+  const handleClaimPortion = (exchangeId: string) => {
+    // The AvailableMealCard component already handles the claiming logic
+    // This callback is just for refreshing the UI
+    showInfo('Available meals refreshed');
+    // Refresh the available meals to reflect updated portion counts
+    setAvailableMeals(getAvailableMealExchanges());
   };
 
-  const handleScaleRecipe = (scaledRecipe: Recipe, servings: number) => {
-    console.log('Scaled recipe to', servings, 'servings:', scaledRecipe.title);
-    // In a real app, this could save the scaled recipe or add it to meal plan
+  const handleAddToSchedule = (recipeId: string, scheduledDate: string, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+    const success = addRecipeToSchedule(recipeId, scheduledDate, mealType);
+    if (success) {
+      const recipe = mockRecipes.find(r => r.id === recipeId);
+      const dateString = new Date(scheduledDate).toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      showSuccess(
+        `${recipe?.title || 'Recipe'} scheduled for ${mealType} on ${dateString}!`,
+        {
+          label: 'View Calendar',
+          onPress: () => {
+            (navigation as any).navigate('Planner');
+          }
+        }
+      );
+    } else {
+      showError('Unable to add recipe to schedule.');
+    }
   };
+
+  const getUserById = (userId: string): User => {
+    return mockUsers.find(user => user.id === userId) || mockUsers[0];
+  };
+
+  const getRecipeById = (recipeId: string): Recipe => {
+    return mockRecipes.find(recipe => recipe.id === recipeId) || mockRecipes[0];
+  };
+
+  // Filter available meals based on dietary filters
+  const filteredAvailableMeals = activeFilters.length === 0 
+    ? availableMeals 
+    : availableMeals.filter(meal => {
+        const recipe = getRecipeById(meal.recipeId);
+        return activeFilters.some(filter => recipe.dietaryTags.includes(filter));
+      });
+
+  // Filter shared recipes based on dietary filters
+  const filteredSharedRecipes = activeFilters.length === 0 
+    ? sharedRecipes 
+    : sharedRecipes.filter(sharedRecipe => {
+        const recipe = getRecipeById(sharedRecipe.recipeId);
+        return activeFilters.some(filter => recipe.dietaryTags.includes(filter));
+      });
 
   const navigateToPlanner = () => {
     navigation.navigate('Planner' as never);
@@ -225,6 +272,33 @@ export const CommunityFeedScreen: React.FC = () => {
     recipesContainer: {
       flex: 1,
     },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.md,
+    },
+    sectionTitle: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+      marginLeft: theme.spacing.sm,
+    },
+    sectionSubtitle: {
+      ...theme.typography.body,
+      color: theme.colors.textSecondary,
+      paddingHorizontal: theme.spacing.md,
+      paddingBottom: theme.spacing.md,
+    },
+    emptySection: {
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.lg,
+      alignItems: 'center',
+    },
+    emptyText: {
+      ...theme.typography.body,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
     weeklyCalendarButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -241,14 +315,31 @@ export const CommunityFeedScreen: React.FC = () => {
     },
   });
 
-  const renderRecipe = ({ item }: { item: Recipe }) => (
-    <RecipeCard
-      recipe={item}
-      onPress={() => console.log('View recipe:', item.id)}
-      onClaimPortion={() => handleClaimPortion(item.id)}
-      onScaleRecipe={handleScaleRecipe}
-    />
-  );
+  const renderAvailableMeal = ({ item }: { item: AvailableMealExchange }) => {
+    const recipe = getRecipeById(item.recipeId);
+    const cook = getUserById(item.cookId);
+    return (
+      <AvailableMealCard
+        exchange={item}
+        recipe={recipe}
+        cook={cook}
+        onClaimPortion={handleClaimPortion}
+      />
+    );
+  };
+
+  const renderSharedRecipe = ({ item }: { item: SharedRecipe }) => {
+    const recipe = getRecipeById(item.recipeId);
+    const sharedBy = getUserById(item.sharedBy);
+    return (
+      <SharedRecipeCard
+        sharedRecipe={item}
+        recipe={recipe}
+        sharedBy={sharedBy}
+        onAddToSchedule={handleAddToSchedule}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -271,13 +362,55 @@ export const CommunityFeedScreen: React.FC = () => {
 
       {renderFilters()}
 
-      <FlatList
-        data={filteredRecipes}
-        renderItem={renderRecipe}
-        keyExtractor={item => item.id}
-        style={styles.recipesContainer}
-        showsVerticalScrollIndicator={false}
-      />
+      <ScrollView style={styles.recipesContainer} showsVerticalScrollIndicator={false}>
+        {/* Available Meals Section */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="restaurant" size={24} color={theme.colors.primary} />
+          <Text style={styles.sectionTitle}>Available Meals</Text>
+        </View>
+        <Text style={styles.sectionSubtitle}>
+          Claim portions from meals your neighbors are cooking
+        </Text>
+        
+        {filteredAvailableMeals.length === 0 ? (
+          <View style={styles.emptySection}>
+            <Text style={styles.emptyText}>
+              No available meals match your filters. Check back later!
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredAvailableMeals}
+            renderItem={renderAvailableMeal}
+            keyExtractor={item => item.id}
+            scrollEnabled={false}
+          />
+        )}
+
+        {/* Shared Recipes Section */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="book" size={24} color={theme.colors.secondary} />
+          <Text style={styles.sectionTitle}>Shared Recipes</Text>
+        </View>
+        <Text style={styles.sectionSubtitle}>
+          Discover new recipes from your community and add them to your schedule
+        </Text>
+        
+        {filteredSharedRecipes.length === 0 ? (
+          <View style={styles.emptySection}>
+            <Text style={styles.emptyText}>
+              No shared recipes match your filters.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredSharedRecipes}
+            renderItem={renderSharedRecipe}
+            keyExtractor={item => item.id}
+            scrollEnabled={false}
+          />
+        )}
+      </ScrollView>
     </View>
   );
 };

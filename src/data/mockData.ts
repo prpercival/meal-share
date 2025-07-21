@@ -15,6 +15,10 @@ export const mockUsers: User[] = [
     cookingSpecialties: ['Italian', 'Mediterranean'],
     rating: 4.8,
     totalExchanges: 25,
+    bio: 'Passionate home cook who loves sharing healthy Mediterranean recipes. Always excited to try new cuisines and meet fellow food enthusiasts!',
+    joinedDate: '2023-03-15',
+    favoriteRecipes: ['1', '3'],
+    cookingLevel: 'Advanced',
   },
   {
     id: '2',
@@ -30,6 +34,10 @@ export const mockUsers: User[] = [
     cookingSpecialties: ['Asian', 'Fusion'],
     rating: 4.6,
     totalExchanges: 18,
+    bio: 'Love experimenting with Asian fusion dishes. Specializing in dairy-free alternatives that don\'t compromise on flavor!',
+    joinedDate: '2023-05-22',
+    favoriteRecipes: ['2'],
+    cookingLevel: 'Intermediate',
   },
   {
     id: '3',
@@ -45,6 +53,10 @@ export const mockUsers: User[] = [
     cookingSpecialties: ['Mexican', 'Plant-based'],
     rating: 4.9,
     totalExchanges: 32,
+    bio: 'Plant-based chef focused on creating delicious vegan versions of classic dishes. Let\'s prove that vegan food can be incredibly satisfying!',
+    joinedDate: '2023-01-10',
+    favoriteRecipes: ['1', '2'],
+    cookingLevel: 'Expert',
   },
   {
     id: '4',
@@ -60,6 +72,10 @@ export const mockUsers: User[] = [
     cookingSpecialties: ['German', 'European'],
     rating: 4.7,
     totalExchanges: 28,
+    bio: 'Traditional German cooking with a modern low-carb twist. Love sharing hearty, satisfying meals that fit a healthy lifestyle.',
+    joinedDate: '2023-02-28',
+    favoriteRecipes: ['3'],
+    cookingLevel: 'Advanced',
   },
   {
     id: '5',
@@ -75,8 +91,178 @@ export const mockUsers: User[] = [
     cookingSpecialties: ['Indian', 'Spicy'],
     rating: 4.9,
     totalExchanges: 35,
+    bio: 'Authentic Indian cuisine enthusiast. I love introducing people to the complex flavors and spices of traditional Indian cooking.',
+    joinedDate: '2022-12-05',
+    favoriteRecipes: ['1', '2', '3'],
+    cookingLevel: 'Expert',
   },
 ];
+
+// Additional users for search functionality
+export const mockPotentialFriends: User[] = [
+  {
+    id: '6',
+    name: 'Emma Wilson',
+    email: 'emma.wilson@example.com',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&crop=face',
+    location: {
+      latitude: 40.7505,
+      longitude: -73.9934,
+      address: '321 Elm St, New York, NY',
+    },
+    dietaryPreferences: ['gluten-free'],
+    cookingSpecialties: ['French', 'Pastry'],
+    rating: 4.5,
+    totalExchanges: 15,
+    bio: 'French pastry enthusiast with a focus on gluten-free baking. Love creating beautiful desserts that everyone can enjoy!',
+    joinedDate: '2023-06-12',
+    favoriteRecipes: [],
+    cookingLevel: 'Advanced',
+  },
+  {
+    id: '7',
+    name: 'Michael Chen',
+    email: 'michael.chen@example.com',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face',
+    location: {
+      latitude: 40.7614,
+      longitude: -73.9776,
+      address: '654 Maple Ave, New York, NY',
+    },
+    dietaryPreferences: [],
+    cookingSpecialties: ['Chinese', 'Szechuan'],
+    rating: 4.7,
+    totalExchanges: 22,
+    bio: 'Authentic Szechuan cuisine specialist. I bring the heat and bold flavors of traditional Chinese cooking to the neighborhood!',
+    joinedDate: '2023-04-08',
+    favoriteRecipes: [],
+    cookingLevel: 'Expert',
+  },
+  {
+    id: '8',
+    name: 'Sarah Johnson',
+    email: 'sarah.johnson@example.com',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=face',
+    location: {
+      latitude: 40.7489,
+      longitude: -73.9680,
+      address: '987 Cedar Rd, New York, NY',
+    },
+    dietaryPreferences: ['vegan', 'gluten-free'],
+    cookingSpecialties: ['Raw Food', 'Smoothie Bowls'],
+    rating: 4.8,
+    totalExchanges: 19,
+    bio: 'Raw food and smoothie bowl artist. Passionate about nutrient-dense, colorful meals that nourish both body and soul.',
+    joinedDate: '2023-07-03',
+    favoriteRecipes: [],
+    cookingLevel: 'Intermediate',
+  },
+  {
+    id: '9',
+    name: 'David Martinez',
+    email: 'david.martinez@example.com',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=face',
+    location: {
+      latitude: 40.7516,
+      longitude: -73.9755,
+      address: '159 Oak Street, New York, NY',
+    },
+    dietaryPreferences: ['keto'],
+    cookingSpecialties: ['BBQ', 'Grilling'],
+    rating: 4.6,
+    totalExchanges: 31,
+    bio: 'BBQ master and grilling enthusiast. Specializing in keto-friendly smoked meats and low-carb sides that pack incredible flavor.',
+    joinedDate: '2023-03-20',
+    favoriteRecipes: [],
+    cookingLevel: 'Advanced',
+  },
+];
+
+// Friends relationship data
+export const mockFriendships: Record<string, string[]> = {
+  '1': ['2', '3', '4', '5'], // Preston's friends
+  '2': ['1', '3', '5'],      // Bradley's friends
+  '3': ['1', '2', '4'],      // Andrew's friends
+  '4': ['1', '3', '5'],      // Jan's friends
+  '5': ['1', '2', '4'],      // Sidhartha's friends
+};
+
+// Helper functions for friend management
+export const getCurrentUserFriends = (): User[] => {
+  const friendIds = mockFriendships[currentUser.id] || [];
+  return mockUsers.filter(user => friendIds.includes(user.id));
+};
+
+export const getPotentialFriends = (): User[] => {
+  const friendIds = mockFriendships[currentUser.id] || [];
+  const allNonFriends = [...mockUsers, ...mockPotentialFriends].filter(
+    user => user.id !== currentUser.id && !friendIds.includes(user.id)
+  );
+  return allNonFriends;
+};
+
+// Shared recipes - recipes people want to share for others to cook
+export interface SharedRecipe {
+  id: string;
+  recipeId: string;
+  sharedBy: string;
+  sharedDate: string;
+  personalNotes?: string;
+  tags: string[];
+  isRecommended?: boolean;
+}
+
+export const mockSharedRecipes: SharedRecipe[] = [
+  {
+    id: 'sr1',
+    recipeId: '1', // Mediterranean Quinoa Bowl
+    sharedBy: '4', // Jan
+    sharedDate: '2025-07-19',
+    personalNotes: 'This is my go-to healthy lunch! I add extra feta and olives.',
+    tags: ['healthy', 'quick', 'vegetarian'],
+    isRecommended: true,
+  },
+  {
+    id: 'sr2',
+    recipeId: '2', // Korean Kimchi Fried Rice
+    sharedBy: '2', // Bradley
+    sharedDate: '2025-07-18',
+    personalNotes: 'Perfect for using up leftover rice. Add a fried egg on top!',
+    tags: ['leftover-friendly', 'spicy', 'asian'],
+  },
+  {
+    id: 'sr3',
+    recipeId: '3', // Italian Carbonara
+    sharedBy: '5', // Sidhartha
+    sharedDate: '2025-07-17',
+    personalNotes: 'Took me a few tries to get right, but worth it! Don\'t rush the egg mixing.',
+    tags: ['italian', 'pasta', 'comfort-food'],
+    isRecommended: true,
+  },
+];
+
+// Helper functions for shared recipes
+export const getSharedRecipes = (): SharedRecipe[] => {
+  return mockSharedRecipes;
+};
+
+export const addRecipeToSchedule = (recipeId: string, scheduledDate: string, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'): boolean => {
+  // Create a new planned meal
+  const newPlannedMeal: PlannedMeal = {
+    id: Date.now().toString(),
+    recipeId,
+    scheduledDate,
+    mealType,
+    source: 'self-cook',
+  };
+  
+  // Add to current user's planned meals
+  if (!mockPlannedMealsByUser[currentUser.id]) {
+    mockPlannedMealsByUser[currentUser.id] = [];
+  }
+  mockPlannedMealsByUser[currentUser.id].push(newPlannedMeal);
+  return true;
+};
 
 export const mockRecipes: Recipe[] = [
   {
@@ -405,6 +591,39 @@ export const getCurrentUserShoppingList = (): ShoppingListItem[] => {
   return mockShoppingListByUser[currentUser.id] || [];
 };
 
+// Helper function to add ingredients to shopping list
+export const addIngredientsToShoppingList = (ingredients: { name: string; amount: number; unit: string }[], recipeId: string): void => {
+  if (!mockShoppingListByUser[currentUser.id]) {
+    mockShoppingListByUser[currentUser.id] = [];
+  }
+
+  const existingItems = mockShoppingListByUser[currentUser.id];
+  
+  ingredients.forEach(ingredient => {
+    // Check if ingredient already exists in shopping list
+    const existingItem = existingItems.find(item => 
+      item.ingredient.toLowerCase() === ingredient.name.toLowerCase() && 
+      item.unit.toLowerCase() === ingredient.unit.toLowerCase()
+    );
+
+    if (existingItem) {
+      // If it exists, add to the amount
+      existingItem.amount += ingredient.amount;
+    } else {
+      // If it doesn't exist, create new item
+      const newItem: ShoppingListItem = {
+        id: `shopping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ingredient: ingredient.name,
+        amount: ingredient.amount,
+        unit: ingredient.unit,
+        recipeId: recipeId,
+        purchased: false,
+      };
+      existingItems.push(newItem);
+    }
+  });
+};
+
 // Pantry items by user ID
 export const mockPantryByUser: Record<string, PantryItem[]> = {
   // Preston Percival's pantry
@@ -609,4 +828,129 @@ export const checkPantryAvailability = (ingredientName: string, requiredAmount: 
     pantryItem, 
     amountAvailable: pantryItem.amount 
   };
+};
+
+// Available meal exchanges for Community Feed
+export interface AvailableMealExchange {
+  id: string;
+  recipeId: string;
+  cookId: string;
+  cookingDate: string;
+  availablePortions: number;
+  totalPortions: number;
+  pricePerPortion?: number;
+  pickupLocation: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  notes?: string;
+  cookingTime: string; // e.g., "6:00 PM"
+}
+
+export const mockAvailableMealExchanges: AvailableMealExchange[] = [
+  {
+    id: 'ame1',
+    recipeId: '1', // Mediterranean Quinoa Bowl
+    cookId: '2', // Bradley Van Egeren
+    cookingDate: new Date().toISOString().split('T')[0], // Today
+    availablePortions: 3,
+    totalPortions: 6,
+    pricePerPortion: 8,
+    pickupLocation: {
+      latitude: 40.7580,
+      longitude: -73.9855,
+      address: '456 Oak Ave, New York, NY',
+    },
+    notes: 'Fresh ingredients from the farmer\'s market! Ready for pickup after 7 PM.',
+    cookingTime: '6:00 PM',
+  },
+  {
+    id: 'ame2',
+    recipeId: '2', // Spicy Korean Kimchi Fried Rice
+    cookId: '3', // Andrew Fitton
+    cookingDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
+    availablePortions: 2,
+    totalPortions: 4,
+    pricePerPortion: 6,
+    pickupLocation: {
+      latitude: 40.7282,
+      longitude: -73.7949,
+      address: '789 Pine St, New York, NY',
+    },
+    notes: 'Made with homemade kimchi! Can adjust spice level on request.',
+    cookingTime: '12:00 PM',
+  },
+  {
+    id: 'ame3',
+    recipeId: '3', // Classic Italian Carbonara
+    cookId: '4', // Jan Roessler
+    cookingDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Day after tomorrow
+    availablePortions: 4,
+    totalPortions: 8,
+    pricePerPortion: 10,
+    pickupLocation: {
+      latitude: 40.7282,
+      longitude: -73.7949,
+      address: '789 Pine St, New York, NY',
+    },
+    notes: 'Authentic Roman recipe with fresh eggs and pecorino!',
+    cookingTime: '7:30 PM',
+  },
+  {
+    id: 'ame4',
+    recipeId: '1', // Mediterranean Quinoa Bowl
+    cookId: '5', // Sidhartha Chakravarty
+    cookingDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days from now
+    availablePortions: 1,
+    totalPortions: 4,
+    pricePerPortion: 7,
+    pickupLocation: {
+      latitude: 40.7282,
+      longitude: -73.7949,
+      address: '789 Pine St, New York, NY',
+    },
+    notes: 'Vegetarian version with extra Mediterranean spices!',
+    cookingTime: '5:00 PM',
+  },
+];
+
+// Helper function to get available meal exchanges
+export const getAvailableMealExchanges = (): AvailableMealExchange[] => {
+  return mockAvailableMealExchanges.filter(exchange => exchange.availablePortions > 0);
+};
+
+// Helper function to check if an exchange is already claimed by current user
+export const isExchangeAlreadyClaimed = (exchangeId: string): boolean => {
+  const userPlannedMeals = mockPlannedMealsByUser[currentUser.id] || [];
+  return userPlannedMeals.some(meal => meal.exchangeId === exchangeId);
+};
+
+// Helper function to claim a portion
+export const claimMealPortion = (exchangeId: string): { success: boolean, exchange?: AvailableMealExchange, newPlannedMeal?: PlannedMeal } => {
+  const exchange = mockAvailableMealExchanges.find(e => e.id === exchangeId);
+  if (!exchange || exchange.availablePortions <= 0) {
+    return { success: false };
+  }
+
+  // Reduce available portions
+  exchange.availablePortions -= 1;
+
+  // Create a new planned meal
+  const newPlannedMeal: PlannedMeal = {
+    id: `pm_${Date.now()}`,
+    recipeId: exchange.recipeId,
+    scheduledDate: exchange.cookingDate,
+    mealType: 'dinner', // Default to dinner, could be configurable
+    source: 'exchange',
+    exchangeId,
+  };
+
+  // Add to current user's planned meals
+  if (!mockPlannedMealsByUser[currentUser.id]) {
+    mockPlannedMealsByUser[currentUser.id] = [];
+  }
+  mockPlannedMealsByUser[currentUser.id].push(newPlannedMeal);
+
+  return { success: true, exchange, newPlannedMeal };
 };

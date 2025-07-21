@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { useAppContext } from '../context/AppContext';
 import { PlannedMeal, ShoppingListItem, NutritionInfo } from '../types';
 import { PantryItem } from '../types/pantry';
@@ -28,13 +33,28 @@ interface WeekDay {
 
 export const PersonalMealPlannerScreen: React.FC = () => {
   const { theme } = useTheme();
+  const { showSuccess, showError, showInfo } = useSnackbar();
   const { weeklyPlan, setWeeklyPlan } = useAppContext();
-  const [selectedTab, setSelectedTab] = useState<'calendar' | 'nutrition' | 'shopping' | 'pantry'>('calendar');
+  const route = useRoute();
+  const initialTab = (route.params as any)?.initialTab || 'calendar';
+  const [selectedTab, setSelectedTab] = useState<'calendar' | 'nutrition' | 'shopping' | 'pantry'>(initialTab);
   const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
   const [plannedMeals, setPlannedMeals] = useState<PlannedMeal[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showAddMealModal, setShowAddMealModal] = useState(false);
+  const [selectedDateForMeal, setSelectedDateForMeal] = useState<string>('');
+  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
+  const [showAddPantryModal, setShowAddPantryModal] = useState(false);
+  const [newPantryItem, setNewPantryItem] = useState({
+    name: '',
+    amount: '',
+    unit: '',
+    category: 'pantry' as PantryItem['category'],
+    expirationDate: '',
+    location: 'Pantry',
+  });
 
   useEffect(() => {
     // Generate current week starting from Sunday
@@ -62,12 +82,23 @@ export const PersonalMealPlannerScreen: React.FC = () => {
     const userShoppingList = getCurrentUserShoppingList();
     setShoppingList(userShoppingList);
 
-    // Load pantry items for the current user
-    const userPantryItems = getCurrentUserPantry();
-    setPantryItems(userPantryItems);
-  }, []);
+  // Load pantry items for the current user
+  const userPantryItems = getCurrentUserPantry();
+  setPantryItems(userPantryItems);
+}, []);
 
-  // Nutrition goals (daily targets)
+// Function to refresh shopping list data
+const refreshShoppingList = useCallback(() => {
+  const userShoppingList = getCurrentUserShoppingList();
+  setShoppingList(userShoppingList);
+}, []);
+
+// Refresh shopping list when screen comes into focus
+useFocusEffect(
+  useCallback(() => {
+    refreshShoppingList();
+  }, [refreshShoppingList])
+);  // Nutrition goals (daily targets)
   const nutritionGoals: NutritionInfo = {
     calories: 2000,
     protein: 150,
@@ -108,10 +139,139 @@ export const PersonalMealPlannerScreen: React.FC = () => {
 
   // Function to toggle shopping list item purchased status
   const toggleShoppingItem = (itemId: string) => {
+    const item = shoppingList.find(item => item.id === itemId);
+    if (!item) return;
+    
     setShoppingList(prevList =>
       prevList.map(item =>
         item.id === itemId ? { ...item, purchased: !item.purchased } : item
       )
+    );
+    
+    // Show feedback
+    if (item.purchased) {
+      showInfo(`${item.ingredient} moved back to shopping list`);
+    } else {
+      showSuccess(`${item.ingredient} marked as purchased!`);
+    }
+  };
+
+  // Add meal functionality
+  const handleAddMeal = (date: string, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+    setSelectedDateForMeal(date);
+    setSelectedMealType(mealType);
+    setShowAddMealModal(true);
+  };
+
+  const handleSelectRecipeForMeal = (recipeId: string) => {
+    const newPlannedMeal: PlannedMeal = {
+      id: Date.now().toString(),
+      recipeId,
+      scheduledDate: selectedDateForMeal,
+      mealType: selectedMealType,
+      source: 'self-cook',
+    };
+
+    setPlannedMeals(prev => [...prev, newPlannedMeal]);
+    setShowAddMealModal(false);
+    Alert.alert('Success', 'Meal added to your calendar!');
+  };
+
+  // Pantry management functions
+  const handleAddPantryItem = () => {
+    if (!newPantryItem.name || !newPantryItem.amount) {
+      Alert.alert('Error', 'Please fill in name and amount');
+      return;
+    }
+
+    const pantryItem: PantryItem = {
+      id: Date.now().toString(),
+      name: newPantryItem.name,
+      amount: parseFloat(newPantryItem.amount),
+      unit: newPantryItem.unit || 'pieces',
+      category: newPantryItem.category,
+      dateAdded: new Date().toISOString(),
+      expirationDate: newPantryItem.expirationDate || undefined,
+      location: newPantryItem.location,
+    };
+
+    setPantryItems(prev => [...prev, pantryItem]);
+    setNewPantryItem({
+      name: '',
+      amount: '',
+      unit: '',
+      category: 'pantry',
+      expirationDate: '',
+      location: 'Pantry',
+    });
+    setShowAddPantryModal(false);
+    Alert.alert('Success', 'Item added to pantry!');
+  };
+
+  const handleRemovePantryItem = (itemId: string) => {
+    Alert.alert(
+      'Remove Item',
+      'Are you sure you want to remove this item from your pantry?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            setPantryItems(prev => prev.filter(item => item.id !== itemId));
+            Alert.alert('Success', 'Item removed from pantry!');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleGenerateShoppingList = () => {
+    Alert.alert(
+      'Generate Shopping List',
+      'This will create a shopping list based on your planned meals for the week.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Generate',
+          onPress: () => {
+            // TODO: Implement shopping list generation logic
+            Alert.alert('Success', 'Shopping list generated based on your meal plan!');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleAutoMarkPantryItems = () => {
+    const itemsInPantry = shoppingList.filter(item => {
+      const availability = checkPantryAvailability(item.ingredient, item.amount, item.unit);
+      return availability.available && !item.purchased;
+    });
+
+    if (itemsInPantry.length === 0) {
+      Alert.alert('Info', 'No pantry items to mark as completed.');
+      return;
+    }
+
+    Alert.alert(
+      'Auto-mark Pantry Items',
+      `Mark ${itemsInPantry.length} items as completed since they're available in your pantry?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Mark Completed',
+          onPress: () => {
+            setShoppingList(prev => 
+              prev.map(item => {
+                const availability = checkPantryAvailability(item.ingredient, item.amount, item.unit);
+                return availability.available ? { ...item, purchased: true } : item;
+              })
+            );
+            Alert.alert('Success', `${itemsInPantry.length} items marked as completed!`);
+          }
+        }
+      ]
     );
   };
 
@@ -627,6 +787,96 @@ export const PersonalMealPlannerScreen: React.FC = () => {
     categoryButtonTextActive: {
       color: 'white',
     },
+    // Modal styles
+    modalContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: theme.spacing.md,
+      paddingTop: theme.spacing.xl,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    modalTitle: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    modalContent: {
+      flex: 1,
+      padding: theme.spacing.md,
+    },
+    modalSectionTitle: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.md,
+    },
+    recipeOption: {
+      backgroundColor: theme.colors.surface,
+      padding: theme.spacing.md,
+      borderRadius: 8,
+      marginBottom: theme.spacing.sm,
+    },
+    recipeOptionTitle: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      fontWeight: '600',
+      marginBottom: theme.spacing.xs,
+    },
+    recipeOptionDetails: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+      marginBottom: theme.spacing.xs,
+    },
+    recipeOptionNutrition: {
+      ...theme.typography.caption,
+      color: theme.colors.primary,
+    },
+    addPantryButton: {
+      padding: theme.spacing.sm,
+      borderRadius: 8,
+      backgroundColor: theme.colors.surface,
+    },
+    removePantryButton: {
+      padding: theme.spacing.xs,
+      marginBottom: theme.spacing.xs,
+    },
+    // Form styles
+    formSection: {
+      marginBottom: theme.spacing.md,
+    },
+    formLabel: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      fontWeight: '600',
+      marginBottom: theme.spacing.sm,
+    },
+    textInput: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.md,
+      ...theme.typography.body,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    createFormButton: {
+      backgroundColor: theme.colors.primary,
+      paddingVertical: theme.spacing.md,
+      paddingHorizontal: theme.spacing.lg,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginTop: theme.spacing.md,
+    },
+    createFormButtonText: {
+      ...theme.typography.body,
+      color: 'white',
+      fontWeight: '600',
+    },
   });
 
   const mealTimes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -684,7 +934,10 @@ export const PersonalMealPlannerScreen: React.FC = () => {
                   }
                   
                   return (
-                    <TouchableOpacity style={styles.addMealButton}>
+                    <TouchableOpacity 
+                      style={styles.addMealButton}
+                      onPress={() => handleAddMeal(day.date, mealTime.toLowerCase() as any)}
+                    >
                       <Text style={styles.addMealText}>+ Add Meal</Text>
                     </TouchableOpacity>
                   );
@@ -944,7 +1197,10 @@ export const PersonalMealPlannerScreen: React.FC = () => {
             {itemsInPantry} of {totalItems} items available in your pantry
           </Text>
           {itemsInPantry > 0 && (
-            <TouchableOpacity style={styles.autoFillButton}>
+            <TouchableOpacity 
+              style={styles.autoFillButton}
+              onPress={handleAutoMarkPantryItems}
+            >
               <Text style={styles.autoFillButtonText}>
                 Auto-mark {itemsInPantry} pantry items
               </Text>
@@ -1042,7 +1298,10 @@ export const PersonalMealPlannerScreen: React.FC = () => {
           </View>
           
           {/* Generate Button */}
-          <TouchableOpacity style={styles.generateButton}>
+          <TouchableOpacity 
+            style={styles.generateButton}
+            onPress={handleGenerateShoppingList}
+          >
             <Text style={styles.generateButtonText}>Generate Shopping List</Text>
           </TouchableOpacity>
         </View>
@@ -1087,7 +1346,12 @@ export const PersonalMealPlannerScreen: React.FC = () => {
                 {filteredItems.length} items • {pantryItems.filter(item => getExpirationStatus(item) === 'expiring').length} expiring soon
               </Text>
             </View>
-            <Ionicons name="nutrition" size={24} color={theme.colors.primary} />
+            <TouchableOpacity 
+              onPress={() => setShowAddPantryModal(true)}
+              style={styles.addPantryButton}
+            >
+              <Ionicons name="add" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
           </View>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
@@ -1145,6 +1409,12 @@ export const PersonalMealPlannerScreen: React.FC = () => {
                   </View>
                   
                   <View style={{ alignItems: 'flex-end' }}>
+                    <TouchableOpacity 
+                      onPress={() => handleRemovePantryItem(item.id)}
+                      style={styles.removePantryButton}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+                    </TouchableOpacity>
                     {item.expirationDate && (
                       <Text style={[
                         styles.expirationDate,
@@ -1234,7 +1504,10 @@ export const PersonalMealPlannerScreen: React.FC = () => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, selectedTab === 'shopping' && styles.tabButtonActive]}
-          onPress={() => setSelectedTab('shopping')}
+          onPress={() => {
+            setSelectedTab('shopping');
+            refreshShoppingList();
+          }}
         >
           <Text
             style={[
@@ -1261,6 +1534,139 @@ export const PersonalMealPlannerScreen: React.FC = () => {
       </View>
 
       {renderContent()}
+      
+      {/* Add Meal Modal */}
+      <Modal visible={showAddMealModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              Add {selectedMealType} for {new Date(selectedDateForMeal).toLocaleDateString()}
+            </Text>
+            <TouchableOpacity onPress={() => setShowAddMealModal(false)}>
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalSectionTitle}>Select a Recipe</Text>
+            {mockRecipes.map(recipe => (
+              <TouchableOpacity
+                key={recipe.id}
+                style={styles.recipeOption}
+                onPress={() => handleSelectRecipeForMeal(recipe.id)}
+              >
+                <Text style={styles.recipeOptionTitle}>{recipe.title}</Text>
+                <Text style={styles.recipeOptionDetails}>
+                  {recipe.cookTime + recipe.prepTime} min • {recipe.servings} servings
+                </Text>
+                <Text style={styles.recipeOptionNutrition}>
+                  {recipe.nutritionInfo.calories} cal • {recipe.nutritionInfo.protein}g protein
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
+      
+      {/* Add Pantry Item Modal */}
+      <Modal visible={showAddPantryModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Add Pantry Item</Text>
+            <TouchableOpacity onPress={() => setShowAddPantryModal(false)}>
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Item Name *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={newPantryItem.name}
+                onChangeText={(text) => setNewPantryItem(prev => ({ ...prev, name: text }))}
+                placeholder="e.g., Chicken Breast, Pasta, etc."
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Amount *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={newPantryItem.amount}
+                onChangeText={(text) => setNewPantryItem(prev => ({ ...prev, amount: text }))}
+                placeholder="e.g., 2, 1.5, etc."
+                placeholderTextColor={theme.colors.textSecondary}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Unit</Text>
+              <TextInput
+                style={styles.textInput}
+                value={newPantryItem.unit}
+                onChangeText={(text) => setNewPantryItem(prev => ({ ...prev, unit: text }))}
+                placeholder="e.g., lbs, cups, pieces, etc."
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Category</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: theme.spacing.sm }}>
+                {(['produce', 'dairy', 'meat', 'pantry', 'frozen', 'beverages', 'condiments', 'spices'] as const).map(category => (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryButton,
+                      newPantryItem.category === category && styles.categoryButtonActive
+                    ]}
+                    onPress={() => setNewPantryItem(prev => ({ ...prev, category }))}
+                  >
+                    <Text style={[
+                      styles.categoryButtonText,
+                      newPantryItem.category === category && styles.categoryButtonTextActive
+                    ]}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Expiration Date (Optional)</Text>
+              <TextInput
+                style={styles.textInput}
+                value={newPantryItem.expirationDate}
+                onChangeText={(text) => setNewPantryItem(prev => ({ ...prev, expirationDate: text }))}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Location</Text>
+              <TextInput
+                style={styles.textInput}
+                value={newPantryItem.location}
+                onChangeText={(text) => setNewPantryItem(prev => ({ ...prev, location: text }))}
+                placeholder="e.g., Pantry, Fridge, Freezer"
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.createFormButton}
+              onPress={handleAddPantryItem}
+            >
+              <Text style={styles.createFormButtonText}>Add to Pantry</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 };

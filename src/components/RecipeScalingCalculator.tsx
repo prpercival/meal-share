@@ -7,10 +7,14 @@ import {
   TextInput,
   Modal,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { Recipe, Ingredient } from '../types';
+import { addIngredientsToShoppingList } from '../data/mockData';
 
 interface RecipeScalingCalculatorProps {
   recipe: Recipe;
@@ -26,7 +30,12 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
   onScale,
 }) => {
   const { theme } = useTheme();
+  const { showSuccess, showError, showInfo } = useSnackbar();
+  const navigation = useNavigation();
   const [targetServings, setTargetServings] = useState(recipe.servings.toString());
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('dinner');
 
   const calculateScaledIngredients = (newServings: number): Ingredient[] => {
     const scaleFactor = newServings / recipe.servings;
@@ -51,6 +60,11 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
     const newServings = parseInt(targetServings);
     if (isNaN(newServings) || newServings <= 0) return;
 
+    setShowScheduleModal(true);
+  };
+
+  const confirmScheduleAndShoppingList = () => {
+    const newServings = parseInt(targetServings);
     const scaledRecipe: Recipe = {
       ...recipe,
       servings: newServings,
@@ -58,8 +72,37 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
       nutritionInfo: calculateScaledNutrition(newServings),
     };
 
+    // Add to meal schedule
     onScale(scaledRecipe, newServings);
+    
+    // Add scaled ingredients to shopping list
+    const scaledIngredients = calculateScaledIngredients(newServings);
+    const ingredientsForShoppingList = scaledIngredients.map(ingredient => ({
+      name: ingredient.name,
+      amount: ingredient.amount,
+      unit: ingredient.unit
+    }));
+    
+    addIngredientsToShoppingList(ingredientsForShoppingList, recipe.id);
+    
+    setShowScheduleModal(false);
     onClose();
+    
+    // Show success message with snackbar
+    const dateString = new Date(selectedDate).toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+    showSuccess(
+      `${recipe.title} scheduled for ${selectedMealType} on ${dateString}!`,
+      {
+        label: 'View Shopping List',
+        onPress: () => {
+          (navigation as any).navigate('Planner', { initialTab: 'shopping' });
+        }
+      }
+    );
   };
 
   const servingsNum = parseInt(targetServings) || recipe.servings;
@@ -238,6 +281,106 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
       ...theme.typography.caption,
       color: theme.colors.textSecondary,
     },
+    instructionStep: {
+      flexDirection: 'row',
+      marginBottom: theme.spacing.md,
+      alignItems: 'flex-start',
+    },
+    stepNumber: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: 12,
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: theme.spacing.sm,
+      marginTop: 2,
+    },
+    stepNumberText: {
+      ...theme.typography.caption,
+      color: 'white',
+      fontWeight: '600',
+      fontSize: 12,
+    },
+    instructionText: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      flex: 1,
+      lineHeight: 20,
+    },
+    scheduleModalContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scheduleModalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: theme.spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    scheduleModalTitle: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    scheduleModalContent: {
+      flex: 1,
+      padding: theme.spacing.lg,
+    },
+    scheduleInput: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      padding: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+      ...theme.typography.body,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.surface,
+    },
+    scheduleLabel: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      fontWeight: '600',
+      marginBottom: theme.spacing.sm,
+    },
+    mealTypeContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: theme.spacing.lg,
+    },
+    mealTypeButton: {
+      flex: 1,
+      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.xs,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      marginHorizontal: theme.spacing.xs,
+      alignItems: 'center',
+    },
+    mealTypeButtonActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    mealTypeButtonText: {
+      ...theme.typography.caption,
+      color: theme.colors.textSecondary,
+    },
+    mealTypeButtonTextActive: {
+      color: 'white',
+    },
+    confirmScheduleButton: {
+      backgroundColor: theme.colors.primary,
+      paddingVertical: theme.spacing.md,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    confirmScheduleButtonText: {
+      ...theme.typography.body,
+      color: 'white',
+      fontWeight: '600',
+    },
   });
 
   const scaledIngredients = calculateScaledIngredients(servingsNum);
@@ -346,6 +489,18 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
                 </View>
               </View>
             </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Cooking Instructions</Text>
+              {recipe.instructions.map((instruction, index) => (
+                <View key={index} style={styles.instructionStep}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.instructionText}>{instruction}</Text>
+                </View>
+              ))}
+            </View>
           </ScrollView>
 
           <View style={styles.buttonContainer}>
@@ -359,11 +514,78 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
               style={[styles.button, styles.scaleButton]}
               onPress={handleScale}
             >
-              <Text style={[styles.buttonText, styles.scaleButtonText]}>Use Scaled Recipe</Text>
+              <Text style={[styles.buttonText, styles.scaleButtonText]}>Schedule Meal</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
+
+      {/* Schedule Selection Modal */}
+      <Modal
+        visible={showScheduleModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.scheduleModalContainer}>
+          <View style={styles.scheduleModalHeader}>
+            <Text style={styles.scheduleModalTitle}>Schedule Recipe</Text>
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={() => setShowScheduleModal(false)}
+            >
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.scheduleModalContent}>
+            <Text style={styles.scheduleLabel}>Recipe</Text>
+            <Text style={[styles.scheduleInput, { backgroundColor: theme.colors.border + '20' }]}>
+              {recipe.title} ({targetServings} servings)
+            </Text>
+
+            <Text style={styles.scheduleLabel}>Date</Text>
+            <TextInput
+              style={styles.scheduleInput}
+              value={selectedDate}
+              onChangeText={setSelectedDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={theme.colors.textSecondary}
+            />
+
+            <Text style={styles.scheduleLabel}>Meal Type</Text>
+            <View style={styles.mealTypeContainer}>
+              {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((mealType) => (
+                <TouchableOpacity
+                  key={mealType}
+                  style={[
+                    styles.mealTypeButton,
+                    selectedMealType === mealType && styles.mealTypeButtonActive,
+                  ]}
+                  onPress={() => setSelectedMealType(mealType)}
+                >
+                  <Text
+                    style={[
+                      styles.mealTypeButtonText,
+                      selectedMealType === mealType && styles.mealTypeButtonTextActive,
+                    ]}
+                  >
+                    {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity 
+              style={styles.confirmScheduleButton} 
+              onPress={confirmScheduleAndShoppingList}
+            >
+              <Text style={styles.confirmScheduleButtonText}>
+                Schedule Recipe & Update Shopping List
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 };

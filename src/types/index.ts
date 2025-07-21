@@ -12,6 +12,10 @@ export interface User {
   cookingSpecialties: string[];
   rating: number;
   totalExchanges: number;
+  bio?: string;
+  joinedDate?: string;
+  favoriteRecipes?: string[];
+  cookingLevel?: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 }
 
 export interface Recipe {
@@ -90,6 +94,33 @@ export interface CookingSession {
   maxParticipants: number;
   status: 'open' | 'full' | 'in-progress' | 'completed' | 'cancelled';
   notes?: string;
+}
+
+export interface AvailableMealExchange {
+  id: string;
+  recipeId: string;
+  cookId: string;
+  cookingDate: string;
+  availablePortions: number;
+  totalPortions: number;
+  pricePerPortion?: number;
+  pickupLocation: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  notes?: string;
+  cookingTime: string;
+}
+
+export interface SharedRecipe {
+  id: string;
+  recipeId: string;
+  sharedBy: string;
+  sharedDate: string;
+  personalNotes?: string;
+  tags: string[];
+  isRecommended?: boolean;
 }
 
 export interface WeeklyMealPlan {
