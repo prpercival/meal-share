@@ -19,6 +19,7 @@ import { Recipe, DietaryTag, User, AvailableMealExchange, SharedRecipe } from '.
 import { 
   mockRecipes, 
   mockUsers, 
+  mockPotentialFriends,
   getAvailableMealExchanges, 
   getSharedRecipes,
   addRecipeToSchedule,
@@ -97,7 +98,9 @@ export const CommunityFeedScreen: React.FC = () => {
   };
 
   const getUserById = (userId: string): User => {
-    return mockUsers.find(user => user.id === userId) || mockUsers[0];
+    return mockUsers.find(user => user.id === userId) || 
+           mockPotentialFriends.find(user => user.id === userId) || 
+           mockUsers[0];
   };
 
   const getRecipeById = (recipeId: string): Recipe => {

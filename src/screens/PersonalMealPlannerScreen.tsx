@@ -924,14 +924,14 @@ useFocusEffect(
                   }
                   
                   // Mock meal for Tuesday lunch (keeping original example)
-                  if (index === 1 && mealTime === 'Lunch') {
-                    return (
-                      <View>
-                        <Text style={styles.mealName}>Mediterranean Quinoa Bowl</Text>
-                        <Text style={styles.mealSource}>From Preston P. (Exchange)</Text>
-                      </View>
-                    );
-                  }
+                  // if (index === 1 && mealTime === 'Lunch') {
+                  //   return (
+                  //     <View>
+                  //       <Text style={styles.mealName}>Mediterranean Quinoa Bowl</Text>
+                  //       <Text style={styles.mealSource}>From Preston P. (Exchange)</Text>
+                  //     </View>
+                  //   );
+                  // }
                   
                   return (
                     <TouchableOpacity 
