@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { User } from '../types';
@@ -39,7 +40,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const styles = StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: Platform.OS === 'web' ? theme.colors.background : 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
@@ -49,6 +50,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       borderRadius: 20,
       padding: 20,
       width: '100%',
+      maxWidth: Platform.OS === 'web' ? 480 : '100%',
       maxHeight: '85%',
       minHeight: 400,
       shadowColor: '#000',

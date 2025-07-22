@@ -1455,6 +1455,19 @@ export const checkPantryAvailability = (ingredientName: string, requiredAmount: 
   };
 };
 
+// Helper function to remove pantry item for current user
+export const removePantryItem = (itemId: string): boolean => {
+  if (!mockPantryByUser[currentUser.id]) {
+    return false;
+  }
+  
+  const originalLength = mockPantryByUser[currentUser.id].length;
+  mockPantryByUser[currentUser.id] = mockPantryByUser[currentUser.id].filter(item => item.id !== itemId);
+  
+  // Return true if an item was actually removed
+  return mockPantryByUser[currentUser.id].length < originalLength;
+};
+
 // Available meal exchanges for Community Feed
 export interface AvailableMealExchange {
   id: string;

@@ -8,7 +8,8 @@ import {
   FlatList,
   TextInput,
   Modal,
-  Alert,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -312,6 +313,11 @@ export const FriendsScreen: React.FC = () => {
     modal: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      ...(Platform.OS === 'web' ? {
+        // On web, add padding/centering but fill the screen with background color
+        paddingHorizontal: 'calc((100vw - 480px) / 2)',
+        minWidth: '100vw',
+      } : {}),
     },
     modalHeader: {
       flexDirection: 'row',
@@ -540,7 +546,7 @@ export const FriendsScreen: React.FC = () => {
       <Modal
         visible={showAddFriends}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
       >
         <View style={styles.modal}>
           <View style={styles.modalHeader}>

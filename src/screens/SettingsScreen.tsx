@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -822,16 +823,22 @@ export const SettingsScreen: React.FC = () => {
       ))}
       
       {/* Location Settings Modal */}
-      <Modal visible={showLocationModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Update Location</Text>
-            <TouchableOpacity onPress={() => setShowLocationModal(false)}>
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent}>
+      <Modal 
+        visible={showLocationModal} 
+        animationType="slide" 
+        presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+        transparent={Platform.OS === 'web'}
+      >
+        <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+          <View style={[styles.modalContainer, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Location</Text>
+              <TouchableOpacity onPress={() => setShowLocationModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent}>
             <View style={styles.formSection}>
               <Text style={styles.formLabel}>Address *</Text>
               <View style={styles.addressInputContainer}>
@@ -922,17 +929,24 @@ export const SettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </ScrollView>
         </View>
+      </View>
       </Modal>
 
       {/* Dietary Preferences Modal */}
-      <Modal visible={showDietaryModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.dietaryModalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Dietary Preferences</Text>
-            <TouchableOpacity onPress={() => setShowDietaryModal(false)}>
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
+      <Modal 
+        visible={showDietaryModal} 
+        animationType="slide" 
+        presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+        transparent={Platform.OS === 'web'}
+      >
+        <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+          <View style={[styles.dietaryModalContainer, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Dietary Preferences</Text>
+              <TouchableOpacity onPress={() => setShowDietaryModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
           
           {/* Fixed Search Header */}
           <View style={styles.fixedSearchHeader}>
@@ -991,17 +1005,24 @@ export const SettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
       </Modal>
 
       {/* Cooking Specialties Modal */}
-      <Modal visible={showCookingModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.dietaryModalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Cooking Specialties</Text>
-            <TouchableOpacity onPress={() => setShowCookingModal(false)}>
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
+      <Modal 
+        visible={showCookingModal} 
+        animationType="slide" 
+        presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+        transparent={Platform.OS === 'web'}
+      >
+        <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+          <View style={[styles.dietaryModalContainer, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Cooking Specialties</Text>
+              <TouchableOpacity onPress={() => setShowCookingModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
           
           {/* Fixed Search Header */}
           <View style={styles.fixedSearchHeader}>
@@ -1060,6 +1081,7 @@ export const SettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
       </Modal>
     </ScrollView>
   );

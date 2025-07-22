@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -292,14 +293,20 @@ export const MealExchangeHubScreen: React.FC = () => {
   const [showLocationMap, setShowLocationMap] = useState(false);
 
   const RecipePicker = ({ onSelect, onClose }: { onSelect: (recipe: Recipe) => void; onClose: () => void }) => (
-    <Modal visible={true} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.pickerModal}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Select Recipe</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
+    <Modal 
+      visible={true} 
+      animationType="slide" 
+      presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+      transparent={Platform.OS === 'web'}
+    >
+      <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+        <View style={[styles.pickerModal, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Recipe</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
         <FlatList
           data={mockRecipes}
           keyExtractor={item => item.id}
@@ -325,18 +332,25 @@ export const MealExchangeHubScreen: React.FC = () => {
           )}
         />
       </View>
+    </View>
     </Modal>
   );
 
   const FriendPicker = ({ onSelect, onClose }: { onSelect: (friend: User) => void; onClose: () => void }) => (
-    <Modal visible={true} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.pickerModal}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Select Friend</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
+    <Modal 
+      visible={true} 
+      animationType="slide" 
+      presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+      transparent={Platform.OS === 'web'}
+    >
+      <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+        <View style={[styles.pickerModal, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Friend</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
         <FlatList
           data={getCurrentUserFriends()}
           keyExtractor={item => item.id}
@@ -362,17 +376,24 @@ export const MealExchangeHubScreen: React.FC = () => {
           )}
         />
       </View>
+    </View>
     </Modal>
   );
 
   const renderCreateModal = () => (
-    <Modal visible={showCreateModal} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.modal}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>
-            Create {selectedExchangeType === 'cook-trade' ? 'Exchange' : 'Cooking Session'}
-          </Text>
-          <TouchableOpacity style={styles.closeButton} onPress={resetForm}>
+    <Modal 
+      visible={showCreateModal} 
+      animationType="slide" 
+      presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+      transparent={Platform.OS === 'web'}
+    >
+      <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+        <View style={[styles.modal, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              Create {selectedExchangeType === 'cook-trade' ? 'Exchange' : 'Cooking Session'}
+            </Text>
+            <TouchableOpacity style={styles.closeButton} onPress={resetForm}>
             <Ionicons name="close" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -460,6 +481,7 @@ export const MealExchangeHubScreen: React.FC = () => {
           onClose={() => setShowFriendPicker(false)} 
         />
       )}
+    </View>
     </Modal>
   );
 

@@ -7,7 +7,8 @@ import {
   TextInput,
   Modal,
   ScrollView,
-  Alert,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -122,6 +123,12 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
       marginHorizontal: theme.spacing.lg,
       maxHeight: '80%',
       width: '90%',
+      ...(Platform.OS === 'web' ? {
+        // On web, constrain modal width and center it
+        maxWidth: 480,
+        alignSelf: 'center',
+        marginHorizontal: 'auto',
+      } : {}),
     },
     scrollContent: {
       flex: 1,
@@ -526,65 +533,129 @@ export const RecipeScalingCalculator: React.FC<RecipeScalingCalculatorProps> = (
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.scheduleModalContainer}>
-          <View style={styles.scheduleModalHeader}>
-            <Text style={styles.scheduleModalTitle}>Schedule Recipe</Text>
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={() => setShowScheduleModal(false)}
-            >
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.scheduleModalContent}>
-            <Text style={styles.scheduleLabel}>Recipe</Text>
-            <Text style={[styles.scheduleInput, { backgroundColor: theme.colors.border + '20' }]}>
-              {recipe.title} ({targetServings} servings)
-            </Text>
-
-            <Text style={styles.scheduleLabel}>Date</Text>
-            <TextInput
-              style={styles.scheduleInput}
-              value={selectedDate}
-              onChangeText={setSelectedDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={theme.colors.textSecondary}
-            />
-
-            <Text style={styles.scheduleLabel}>Meal Type</Text>
-            <View style={styles.mealTypeContainer}>
-              {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((mealType) => (
-                <TouchableOpacity
-                  key={mealType}
-                  style={[
-                    styles.mealTypeButton,
-                    selectedMealType === mealType && styles.mealTypeButtonActive,
-                  ]}
-                  onPress={() => setSelectedMealType(mealType)}
+        {Platform.OS === 'web' ? (
+          <View style={{ flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={[styles.scheduleModalContainer, { maxWidth: 480, width: '100%' }]}>
+              <View style={styles.scheduleModalHeader}>
+                <Text style={styles.scheduleModalTitle}>Schedule Recipe</Text>
+                <TouchableOpacity 
+                  style={styles.closeButton} 
+                  onPress={() => setShowScheduleModal(false)}
                 >
-                  <Text
-                    style={[
-                      styles.mealTypeButtonText,
-                      selectedMealType === mealType && styles.mealTypeButtonTextActive,
-                    ]}
-                  >
-                    {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                  <Ionicons name="close" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.scheduleModalContent}>
+                <Text style={styles.scheduleLabel}>Recipe</Text>
+                <Text style={[styles.scheduleInput, { backgroundColor: theme.colors.border + '20' }]}>
+                  {recipe.title} ({targetServings} servings)
+                </Text>
+
+                <Text style={styles.scheduleLabel}>Date</Text>
+                <TextInput
+                  style={styles.scheduleInput}
+                  value={selectedDate}
+                  onChangeText={setSelectedDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={theme.colors.textSecondary}
+                />
+
+                <Text style={styles.scheduleLabel}>Meal Type</Text>
+                <View style={styles.mealTypeContainer}>
+                  {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((mealType) => (
+                    <TouchableOpacity
+                      key={mealType}
+                      style={[
+                        styles.mealTypeButton,
+                        selectedMealType === mealType && styles.mealTypeButtonActive,
+                      ]}
+                      onPress={() => setSelectedMealType(mealType)}
+                    >
+                      <Text
+                        style={[
+                          styles.mealTypeButtonText,
+                          selectedMealType === mealType && styles.mealTypeButtonTextActive,
+                        ]}
+                      >
+                        {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.confirmScheduleButton} 
+                  onPress={confirmScheduleAndShoppingList}
+                >
+                  <Text style={styles.confirmScheduleButtonText}>
+                    Schedule Recipe & Update Shopping List
                   </Text>
                 </TouchableOpacity>
-              ))}
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.scheduleModalContainer}>
+            <View style={styles.scheduleModalHeader}>
+              <Text style={styles.scheduleModalTitle}>Schedule Recipe</Text>
+              <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={() => setShowScheduleModal(false)}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity 
-              style={styles.confirmScheduleButton} 
-              onPress={confirmScheduleAndShoppingList}
-            >
-              <Text style={styles.confirmScheduleButtonText}>
-                Schedule Recipe & Update Shopping List
+            <View style={styles.scheduleModalContent}>
+              <Text style={styles.scheduleLabel}>Recipe</Text>
+              <Text style={[styles.scheduleInput, { backgroundColor: theme.colors.border + '20' }]}>
+                {recipe.title} ({targetServings} servings)
               </Text>
-            </TouchableOpacity>
+
+              <Text style={styles.scheduleLabel}>Date</Text>
+              <TextInput
+                style={styles.scheduleInput}
+                value={selectedDate}
+                onChangeText={setSelectedDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+
+              <Text style={styles.scheduleLabel}>Meal Type</Text>
+              <View style={styles.mealTypeContainer}>
+                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((mealType) => (
+                  <TouchableOpacity
+                    key={mealType}
+                    style={[
+                      styles.mealTypeButton,
+                      selectedMealType === mealType && styles.mealTypeButtonActive,
+                    ]}
+                    onPress={() => setSelectedMealType(mealType)}
+                  >
+                    <Text
+                      style={[
+                        styles.mealTypeButtonText,
+                        selectedMealType === mealType && styles.mealTypeButtonTextActive,
+                      ]}
+                    >
+                      {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity 
+                style={styles.confirmScheduleButton} 
+                onPress={confirmScheduleAndShoppingList}
+              >
+                <Text style={styles.confirmScheduleButtonText}>
+                  Schedule Recipe & Update Shopping List
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
       </Modal>
     </Modal>
   );

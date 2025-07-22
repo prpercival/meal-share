@@ -6,9 +6,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Alert,
   Modal,
   TextInput,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,9 @@ import {
   getCurrentUserPlannedMeals, 
   getCurrentUserShoppingList,
   getCurrentUserPantry,
-  checkPantryAvailability 
+  checkPantryAvailability,
+  addIngredientsToShoppingList,
+  removePantryItem
 } from '../data/mockData';
 
 interface WeekDay {
@@ -93,11 +96,18 @@ const refreshShoppingList = useCallback(() => {
   setShoppingList(userShoppingList);
 }, []);
 
-// Refresh shopping list when screen comes into focus
+// Function to refresh pantry data
+const refreshPantryItems = useCallback(() => {
+  const userPantryItems = getCurrentUserPantry();
+  setPantryItems(userPantryItems);
+}, []);
+
+// Refresh shopping list and pantry when screen comes into focus
 useFocusEffect(
   useCallback(() => {
     refreshShoppingList();
-  }, [refreshShoppingList])
+    refreshPantryItems();
+  }, [refreshShoppingList, refreshPantryItems])
 );  // Nutrition goals (daily targets)
   const nutritionGoals: NutritionInfo = {
     calories: 2000,
@@ -173,14 +183,29 @@ useFocusEffect(
     };
 
     setPlannedMeals(prev => [...prev, newPlannedMeal]);
+    
+    // Find the recipe and add its ingredients to the shopping list
+    const recipe = mockRecipes.find(r => r.id === recipeId);
+    if (recipe && recipe.ingredients) {
+      const ingredients = recipe.ingredients.map(ingredient => ({
+        name: ingredient.name,
+        amount: ingredient.amount,
+        unit: ingredient.unit,
+      }));
+      addIngredientsToShoppingList(ingredients, recipeId);
+      
+      // Refresh the shopping list to show the new items
+      refreshShoppingList();
+    }
+    
     setShowAddMealModal(false);
-    Alert.alert('Success', 'Meal added to your calendar!');
+    showSuccess('Meal added to your calendar and ingredients added to shopping list!');
   };
 
   // Pantry management functions
   const handleAddPantryItem = () => {
     if (!newPantryItem.name || !newPantryItem.amount) {
-      Alert.alert('Error', 'Please fill in name and amount');
+      showError('Please fill in name and amount');
       return;
     }
 
@@ -205,41 +230,45 @@ useFocusEffect(
       location: 'Pantry',
     });
     setShowAddPantryModal(false);
-    Alert.alert('Success', 'Item added to pantry!');
+    showSuccess('Item added to pantry!');
   };
 
   const handleRemovePantryItem = (itemId: string) => {
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from your pantry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
+    console.log('handleRemovePantryItem called with itemId:', itemId);
+    
+    // Find the item to get its name for the confirmation message
+    const item = pantryItems.find(item => item.id === itemId);
+    const itemName = item ? item.name : 'this item';
+    
+    // Show confirmation snackbar with action button
+    showInfo(
+      `Remove "${itemName}" from pantry?`,
+      {
+        label: 'DELETE',
+        onPress: () => {
+          const success = removePantryItem(itemId);
+          if (success) {
+            // Update local state to reflect the change
             setPantryItems(prev => prev.filter(item => item.id !== itemId));
-            Alert.alert('Success', 'Item removed from pantry!');
+            showSuccess('Item removed from pantry!');
+          } else {
+            showError('Failed to remove item from pantry');
           }
         }
-      ]
+      }
     );
   };
 
   const handleGenerateShoppingList = () => {
-    Alert.alert(
-      'Generate Shopping List',
-      'This will create a shopping list based on your planned meals for the week.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Generate',
-          onPress: () => {
-            // TODO: Implement shopping list generation logic
-            Alert.alert('Success', 'Shopping list generated based on your meal plan!');
-          }
+    showInfo(
+      'Create a shopping list based on your planned meals for the week?',
+      {
+        label: 'GENERATE',
+        onPress: () => {
+          // TODO: Implement shopping list generation logic
+          showSuccess('Shopping list generated based on your meal plan!');
         }
-      ]
+      }
     );
   };
 
@@ -250,28 +279,24 @@ useFocusEffect(
     });
 
     if (itemsInPantry.length === 0) {
-      Alert.alert('Info', 'No pantry items to mark as completed.');
+      showInfo('No pantry items to mark as completed.');
       return;
     }
 
-    Alert.alert(
-      'Auto-mark Pantry Items',
+    showInfo(
       `Mark ${itemsInPantry.length} items as completed since they're available in your pantry?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mark Completed',
-          onPress: () => {
-            setShoppingList(prev => 
-              prev.map(item => {
-                const availability = checkPantryAvailability(item.ingredient, item.amount, item.unit);
-                return availability.available ? { ...item, purchased: true } : item;
-              })
-            );
-            Alert.alert('Success', `${itemsInPantry.length} items marked as completed!`);
-          }
+      {
+        label: 'MARK COMPLETED',
+        onPress: () => {
+          setShoppingList(prev => 
+            prev.map(item => {
+              const availability = checkPantryAvailability(item.ingredient, item.amount, item.unit);
+              return availability.available ? { ...item, purchased: true } : item;
+            })
+          );
+          showSuccess(`${itemsInPantry.length} items marked as completed!`);
         }
-      ]
+      }
     );
   };
 
@@ -1536,16 +1561,22 @@ useFocusEffect(
       {renderContent()}
       
       {/* Add Meal Modal */}
-      <Modal visible={showAddMealModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              Add {selectedMealType} for {selectedDateForMeal ? new Date(selectedDateForMeal + 'T12:00:00').toLocaleDateString() : ''}
-            </Text>
-            <TouchableOpacity onPress={() => setShowAddMealModal(false)}>
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
+      <Modal 
+        visible={showAddMealModal} 
+        animationType="slide" 
+        presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+        transparent={Platform.OS === 'web'}
+      >
+        <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+          <View style={[styles.modalContainer, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Add {selectedMealType} for {selectedDateForMeal ? new Date(selectedDateForMeal + 'T12:00:00').toLocaleDateString() : ''}
+              </Text>
+              <TouchableOpacity onPress={() => setShowAddMealModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
           
           <ScrollView style={styles.modalContent}>
             <Text style={styles.modalSectionTitle}>Select a Recipe</Text>
@@ -1566,15 +1597,22 @@ useFocusEffect(
             ))}
           </ScrollView>
         </View>
+      </View>
       </Modal>
       
       {/* Add Pantry Item Modal */}
-      <Modal visible={showAddPantryModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add Pantry Item</Text>
-            <TouchableOpacity onPress={() => setShowAddPantryModal(false)}>
-              <Ionicons name="close" size={24} color={theme.colors.text} />
+      <Modal 
+        visible={showAddPantryModal} 
+        animationType="slide" 
+        presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+        transparent={Platform.OS === 'web'}
+      >
+        <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+          <View style={[styles.modalContainer, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Pantry Item</Text>
+              <TouchableOpacity onPress={() => setShowAddPantryModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
           
@@ -1666,6 +1704,7 @@ useFocusEffect(
             </TouchableOpacity>
           </ScrollView>
         </View>
+      </View>
       </Modal>
     </View>
   );

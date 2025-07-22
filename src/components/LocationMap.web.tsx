@@ -155,14 +155,21 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   });
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
+    <Modal 
+      visible={visible} 
+      animationType="slide" 
+      onRequestClose={onClose}
+      presentationStyle={Platform.OS === 'web' ? 'overFullScreen' : 'pageSheet'}
+      transparent={Platform.OS === 'web'}
+    >
+      <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' } : null}>
+        <View style={[styles.modalContainer, Platform.OS === 'web' && { maxWidth: 480, width: '90%', height: '80%', borderRadius: 12 }]}>
+          <View style={styles.header}>
+            <Text style={styles.title}>{title}</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
 
         <View style={styles.mapContainer}>
           <WebMapView 
@@ -223,6 +230,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           </ScrollView>
         </View>
       </View>
+    </View>
     </Modal>
   );
 };

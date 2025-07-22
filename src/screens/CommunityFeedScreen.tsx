@@ -396,7 +396,7 @@ export const CommunityFeedScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Community Feed</Text>
+        <Text style={styles.title}>MealShare Community Feed</Text>
         <Text style={styles.subtitle}>
           Discover and share meals with your neighbors
         </Text>

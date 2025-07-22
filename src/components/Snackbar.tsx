@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -101,8 +101,16 @@ export const Snackbar: React.FC<SnackbarProps> = ({ message, onDismiss }) => {
     container: {
       position: 'absolute',
       bottom: 20,
-      left: 16,
-      right: 16,
+      ...(Platform.OS === 'web' ? {
+        // On web, center the snackbar within the responsive container
+        left: '50%',
+        marginLeft: -(Math.min(Dimensions.get('window').width, 480) - 32) / 2,
+        width: Math.min(Dimensions.get('window').width, 480) - 32,
+      } : {
+        // On mobile, use the standard left/right positioning
+        left: 16,
+        right: 16,
+      }),
       backgroundColor: getBackgroundColor(),
       borderRadius: 8,
       paddingHorizontal: 16,
